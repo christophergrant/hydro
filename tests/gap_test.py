@@ -191,5 +191,6 @@ def test_scd_type2(tmpdir):
     df = spark.createDataFrame(source_data)
     hydro.scd(delta_table, df, 'id', 'ts', 'end_ts')
 
+
 def test_bootstrap_scd2(tmpdir):
     pass

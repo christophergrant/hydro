@@ -215,5 +215,34 @@ def scd(
         raise ValueError('type not supported')
 
 
-def bootstrap_scd2():
-    pass
+def bootstrap_scd2(
+        source_df: DataFrame,
+        keys: list[str] | str,
+        effective_ts: str,
+        end_ts: str,
+        table_properties: dict[str, str],
+        partition_columns: list[str],
+        comment: str,
+        path: str = None,
+        table_identifier: str = None,
+) -> None:
+    if not path and not table_identifier:
+        raise ValueError()
+    window = Window.partitionBy(keys).orderBy(effective_ts)
+    final_payload = source_df.withColumn(
+        end_ts, F.lead(effective_ts).over(window),
+    )
+
+    builder = DeltaTable.createIfNotExists(source_df.sparkSession)
+    for k, v in table_properties.items():
+        builder = builder.property(k, v)
+    builder = builder.addColumns(source_df.schema)
+    builder = builder.partitionedBy(partition_columns)
+    builder = builder.comment(comment)
+
+    if path:
+        builder.location(path).execute()
+        final_payload.write.format("delta").save(path)
+    elif table_identifier:
+        builder.tableName(table_identifier).execute()
+        final_payload.write.format("delta").saveAsTable(table_identifier)
