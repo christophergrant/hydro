@@ -65,7 +65,7 @@ results in something like
     'format': 'delta',
     'id': '8f5fa9f2-fd74-49de-afb6-d6e19d219838',
     'lastModified': datetime.datetime(2023, 1, 4, 16, 0, 52, 755000),
-    'location': 'proto:/path/to/delta/table',
+    'location': 'scheme:/path/to/delta/table',
     'minReaderVersion': 1,
     'minWriterVersion': 2,
     'name': None,
