@@ -2,6 +2,12 @@
 
 hydro is a collection of Apache Spark and Linux Foundation Delta Lake related tooling.
 
+## Install
+
+```commandline
+pip install delta-hydro
+```
+
 ## Usage
 
 ### DeltaTable full schema
