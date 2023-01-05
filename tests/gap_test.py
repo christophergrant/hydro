@@ -145,3 +145,10 @@ def test_detail_enhanced(tmpdir):
     enhanced_details = hydro.detail_enhanced(delta_table)
     print(enhanced_details)
     assert enhanced_details['numRecords'] == '1.0'
+
+def test_partition_stats(tmpdir):
+    path = f'{tmpdir}/{inspect.stack()[0][3]}'
+    spark.range(100).withColumn("part", F.col("id") % 5).write.partitionBy("part").format('delta').save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+
+    hydro.partition_stats(delta_table).show()

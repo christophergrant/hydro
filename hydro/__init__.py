@@ -8,10 +8,14 @@ from delta import DeltaTable
 from pyspark.sql import DataFrame
 from pyspark.sql.types import DataType
 from pyspark.sql.types import StructType
+import copy
 
 # transformed numFiles to string, sizeInBytes -> size with type string
 DETAIL_SCHEMA_JSON = '{"fields":[{"metadata":{},"name":"createdAt","nullable":true,"type":"timestamp"},{"metadata":{},"name":"description","nullable":true,"type":"string"},{"metadata":{},"name":"format","nullable":true,"type":"string"},{"metadata":{},"name":"id","nullable":true,"type":"string"},{"metadata":{},"name":"lastModified","nullable":true,"type":"timestamp"},{"metadata":{},"name":"location","nullable":true,"type":"string"},{"metadata":{},"name":"minReaderVersion","nullable":true,"type":"long"},{"metadata":{},"name":"minWriterVersion","nullable":true,"type":"long"},{"metadata":{},"name":"name","nullable":true,"type":"string"},{"metadata":{},"name":"numFiles","nullable":true,"type":"string"},{"metadata":{},"name":"partitionColumns","nullable":true,"type":{"containsNull":true,"elementType":"string","type":"array"}},{"metadata":{},"name":"properties","nullable":true,"type":{"keyType":"string","type":"map","valueContainsNull":true,"valueType":"string"}},{"metadata":{},"name":"size","nullable":true,"type":"string"}],"type":"struct"}'  # noqa: E501
 
+class DetailOutput:
+    def __init__(self, delta_table: DeltaTable):
+        self.__dict__ = copy.deepcopy(delta_table.detail().collect()[0].asDict())
 
 def _humanize_number(number: int) -> str:
     return f'{number:,}'
@@ -75,6 +79,11 @@ def get_table_zordering(delta_table: DeltaTable) -> DataFrame:
         .count()
     )
 
+def partition_stats(delta_table: DeltaTable) -> DataFrame:
+    allfiles = _snapshot_allfiles(delta_table)
+    detail = DetailOutput(delta_table)
+    partition_columns = [f"partitionValues.{col}" for col in detail.partitionColumns]
+    return allfiles.groupBy(*partition_columns).agg(F.sum("size").alias("total_bytes"), F.percentile_approx("size", [0, 0.25, 0.5, 0.75, 1.0]).alias("bytes_quantiles"), F.sum(F.get_json_object('stats', '$.numRecords')).alias("num_records"), F.count("*").alias("num_files"))
 
 def fields(
     delta_table: DeltaTable,
