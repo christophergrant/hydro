@@ -153,3 +153,15 @@ def test_partition_stats(tmpdir):
     delta_table = DeltaTable.forPath(spark, path)
 
     hydro.partition_stats(delta_table).show()
+
+
+def test_partial_update_set(tmpdir):
+    path = f"{tmpdir}/{inspect.stack()[0][3]}"
+    spark.range(1).withColumn("s1", F.struct(F.lit("a").alias("c1"))).write.format(
+        "delta",
+    ).save(
+        path,
+    )
+    delta_table = DeltaTable.forPath(spark, path)
+    fields = hydro.fields(delta_table)
+    print(hydro.partial_update_set(fields, "source", "target"))

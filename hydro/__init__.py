@@ -138,3 +138,12 @@ def fields(
         return _get_leaf_fields(struct, "")
 
     return get_leaf_fields(schema, include_types)
+
+
+def partial_update_set(
+    fields: list[str], source_alias: str, target_alias: str
+) -> F.col:
+    return {
+        field: F.coalesce(f"{source_alias}.{field}, {target_alias}.{field}")
+        for field in fields
+    }
