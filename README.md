@@ -19,6 +19,7 @@ Spark lets you do this, but only gives you the top-level fields. Real life data 
 `hydro.fields` gives us what we need.
 
 ```python
+import hydro
 
 data = """
 {
@@ -50,6 +51,9 @@ You can get high-level information about a Delta Lake table by using the `descri
 Hydro provides a simple wrapper that makes the output more readable for humans:
 
 ```python
+import hydro
+from delta import DeltaTable
+
 delta_table = DeltaTable(spark, path)
 hydro.detail(delta_table)
 ```
