@@ -19,7 +19,6 @@ def _humanize_bytes(num_bytes) -> str:
 
 def _snapshot_allfiles(delta_table: DeltaTable) -> DataFrame:
     spark = delta_table.toDF().sparkSession
-
     location = delta_table.detail().collect()[0]["location"]
 
     delta_log = spark._jvm.org.apache.spark.sql.delta.DeltaLog.forTable(
@@ -51,7 +50,7 @@ def get_table_zordering(delta_table: DeltaTable) -> DataFrame:
     )
 
 
-def schema_leaf_nodes(
+def fields(
     delta_table: DeltaTable, include_types: bool = False
 ) -> list[str]:
     # ChatGPT 🤖 prompt:
