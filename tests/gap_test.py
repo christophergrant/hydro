@@ -174,3 +174,12 @@ def test_partial_update_set_merge(tmpdir):
     presented = delta_table.toDF().collect()[0].asDict(recursive=True)
     expected = {"id": 0, "data": "data", "s1": {"c1": "b"}}
     assert presented == expected
+
+def test_scd_type2(tmpdir):
+    path = f"{tmpdir}/{inspect.stack()[0][3]}"
+    target_data = [{"id": 1, "location": "Southern California", "ts": "1969-01-01 00:00:00"}]
+    spark.createDataFrame(target_data).withColumn("end_ts", F.lit(None).cast("string")).write.format("delta").save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+    source_data = [{"id": 1, "location": "Northern California", "ts": "2019-11-01 00:00:00"}]
+    df = spark.createDataFrame(source_data)
+    hydro.scd(delta_table, df, "id", "ts", "end_ts")

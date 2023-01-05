@@ -6,10 +6,11 @@ from typing import Any
 
 import pyspark.sql.functions as F
 from delta import DeltaTable
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, Window
 from pyspark.sql.types import DataType
 from pyspark.sql.types import StructType
 
+from uuid import uuid4
 # transformed numFiles to string, sizeInBytes -> size with type string
 DETAIL_SCHEMA_JSON = '{"fields":[{"metadata":{},"name":"createdAt","nullable":true,"type":"timestamp"},{"metadata":{},"name":"description","nullable":true,"type":"string"},{"metadata":{},"name":"format","nullable":true,"type":"string"},{"metadata":{},"name":"id","nullable":true,"type":"string"},{"metadata":{},"name":"lastModified","nullable":true,"type":"timestamp"},{"metadata":{},"name":"location","nullable":true,"type":"string"},{"metadata":{},"name":"minReaderVersion","nullable":true,"type":"long"},{"metadata":{},"name":"minWriterVersion","nullable":true,"type":"long"},{"metadata":{},"name":"name","nullable":true,"type":"string"},{"metadata":{},"name":"numFiles","nullable":true,"type":"string"},{"metadata":{},"name":"partitionColumns","nullable":true,"type":{"containsNull":true,"elementType":"string","type":"array"}},{"metadata":{},"name":"properties","nullable":true,"type":{"keyType":"string","type":"map","valueContainsNull":true,"valueType":"string"}},{"metadata":{},"name":"size","nullable":true,"type":"string"}],"type":"struct"}'  # noqa: E501
 
@@ -170,3 +171,27 @@ def partial_update_set(
         field: F.coalesce(f"{source_alias}.{field}", f"{target_alias}.{field}")
         for field in fields
     }
+
+
+def scd(delta_table: DeltaTable, source: DataFrame, keys: list[str] | str, effective_ts: str, end_ts: str, type: int = 2):
+
+    def _scd2(delta_table: DeltaTable, source: DataFrame, keys: list[str] | str, effective_ts: str, end_ts: str):
+        if isinstance(keys, str):
+            keys = [keys]
+        updated_rows = delta_table.toDF().join(source, keys, "left_semi").filter(F.col(end_ts).isNull())
+        combined_rows = updated_rows.unionByName(source, allowMissingColumns=True)
+        window = Window.partitionBy(keys).orderBy(effective_ts)
+        final_payload = combined_rows.withColumn(end_ts, F.lead(effective_ts).over(window))
+        merge_keys = keys + [effective_ts]
+        merge_key_condition = " AND ".join([f"source.{key} = target.{key}" for key in merge_keys])
+        print(merge_key_condition)
+        delta_table.alias("target").merge(final_payload.alias("source"), merge_key_condition).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
+        delta_table.toDF().show()
+    if type == 2:
+        _scd2(delta_table, source, keys, effective_ts, end_ts)
+    else:
+        raise ValueError("type not supported")
+
+
+def bootstrap_scd2():
+    pass
