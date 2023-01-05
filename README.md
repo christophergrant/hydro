@@ -1,6 +1,6 @@
-# Hydro
+# hydro
 
-Hydro is a collection of Apache Spark and Linux Foundation Delta Lake related tooling.
+hydro is a collection of Apache Spark and Linux Foundation Delta Lake related tooling.
 
 ## Usage
 
