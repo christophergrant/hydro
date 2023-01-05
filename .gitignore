@@ -3,3 +3,6 @@
 /.coverage
 /.tox
 */spark-warehouse
+/build
+/dist
+/.idea
