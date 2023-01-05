@@ -16,15 +16,15 @@ Spark lets you do this, but only gives you the top-level fields. Real life data 
 
 data = """
 {
-   "isbn":"0-942299-79-5",
-   "title":"The Society of the Spectacle",
-   "author":{
+    "isbn":"0-942299-79-5",
+    "title":"The Society of the Spectacle",
+    "author":{
       "first_name":"Guy",
       "last_name":"Debord"
-   },
-   "published_year":1967,
-   "pages":154,
-   "language":"French"
+    },
+    "published_year":1967,
+    "pages":154,
+    "language":"French"
 }
 """
 # write `data` to delta table and define it as `delta_table`
@@ -49,19 +49,21 @@ hydro.detail(delta_table)
 ```
 results in something like
 ```
-{'createdAt': datetime.datetime(2023, 1, 4, 16, 0, 35, 328000),
- 'description': None,
- 'format': 'delta',
- 'id': '8f5fa9f2-fd74-49de-afb6-d6e19d219838',
- 'lastModified': datetime.datetime(2023, 1, 4, 16, 0, 52, 755000),
- 'location': 'proto:/path/to/delta/table',
- 'minReaderVersion': 1,
- 'minWriterVersion': 2,
- 'name': None,
- 'numFiles': '1,000',
- 'partitionColumns': [],
- 'properties': {},
- 'size': '523.39 KiB'}
+{
+    'createdAt': datetime.datetime(2023, 1, 4, 16, 0, 35, 328000),
+    'description': None,
+    'format': 'delta',
+    'id': '8f5fa9f2-fd74-49de-afb6-d6e19d219838',
+    'lastModified': datetime.datetime(2023, 1, 4, 16, 0, 52, 755000),
+    'location': 'proto:/path/to/delta/table',
+    'minReaderVersion': 1,
+    'minWriterVersion': 2,
+    'name': None,
+    'numFiles': '1,000',
+    'partitionColumns': [],
+    'properties': {},
+    'size': '523.39 KiB'
+}
 ```
 
 ## Contributions
