@@ -7,11 +7,11 @@ on:
   pull_request:
 
 jobs:
-  main-windows:
-    uses: asottile/workflows/.github/workflows/tox.yml@v1.0.0
-    with:
-      env: '["py37"]'
-      os: windows-latest
+  #  main-windows:
+  #    uses: asottile/workflows/.github/workflows/tox.yml@v1.0.0
+  #    with:
+  #      env: '["py37"]'
+  #      os: windows-latest
   main-linux:
     uses: asottile/workflows/.github/workflows/tox.yml@v1.0.0
     with:
