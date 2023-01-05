@@ -16,7 +16,27 @@ DETAIL_SCHEMA_JSON = '{"fields":[{"metadata":{},"name":"createdAt","nullable":tr
 
 class DetailOutput:
     def __init__(self, delta_table: DeltaTable):
-        self.__dict__ = copy.deepcopy(delta_table.detail().collect()[0].asDict())
+        detail_output = delta_table.detail().collect()[0].asDict()
+        self.created_at = detail_output["createdAt"]
+        self.description: str = detail_output["description"]
+        self.format = detail_output["format"]
+        self.id = detail_output["id"]
+        self.last_modified = detail_output["lastModified"]
+        self.location = detail_output["location"]
+        self.min_reader_version = detail_output["minReaderVersion"]
+        self.min_writer_version = detail_output["minWriterVersion"]
+        self.name: str = detail_output["name"]
+        self.num_files = detail_output["numFiles"]
+        self.partition_columns = detail_output["partitionColumns"]
+        self.properties = detail_output["properties"]
+        self.size = detail_output["sizeInBytes"]
+
+    def humanize(self):
+        self.num_files = _humanize_number(self.num_files)
+        self.size = _humanize_bytes(self.size)
+
+    def to_dict(self):
+        return copy.deepcopy(self.__dict__)
 
 
 def _humanize_number(number: int) -> str:
@@ -45,24 +65,17 @@ def _snapshot_allfiles(delta_table: DeltaTable) -> DataFrame:
     return DataFrame(delta_log.snapshot().allFiles(), spark)
 
 
-def detail(delta_table: DeltaTable) -> DataFrame:
-    machine_detail = delta_table.detail().collect()[0].asDict()
-    machine_detail["numFiles"] = f"{machine_detail['numFiles']:,}"
-
-    machine_detail["size"] = _humanize_bytes(machine_detail["sizeInBytes"])
-    del machine_detail["sizeInBytes"]
-
-    spark = delta_table.toDF().sparkSession
-    schema = StructType.fromJson(json.loads(DETAIL_SCHEMA_JSON))
-    return spark.createDataFrame([machine_detail], schema)
+def detail(delta_table: DeltaTable) -> dict[Any, Any]:
+    detail_output = DetailOutput(delta_table)
+    detail_output.humanize()
+    return detail_output.to_dict()
 
 
 def detail_enhanced(delta_table: DeltaTable) -> dict[Any, Any]:
-    details = detail(delta_table).collect()[0].asDict()
+    details = detail(delta_table)
     allfiles = _snapshot_allfiles(delta_table)
-    detail_output = DetailOutput(delta_table)
     partition_columns = [
-        f"partitionValues.{col}" for col in detail_output.partitionColumns
+        f"partitionValues.{col}" for col in details["partition_columns"]
     ]
 
     num_records = (
@@ -102,7 +115,7 @@ def get_table_zordering(delta_table: DeltaTable) -> DataFrame:
 def partition_stats(delta_table: DeltaTable) -> DataFrame:
     allfiles = _snapshot_allfiles(delta_table)
     detail = DetailOutput(delta_table)
-    partition_columns = [f"partitionValues.{col}" for col in detail.partitionColumns]
+    partition_columns = [f"partitionValues.{col}" for col in detail.partition_columns]
     return allfiles.groupBy(*partition_columns).agg(
         F.sum("size").alias("total_bytes"),
         F.percentile_approx("size", [0, 0.25, 0.5, 0.75, 1.0]).alias("bytes_quantiles"),

@@ -43,16 +43,10 @@ def test_snapshot_allfiles_basic(tmpdir):
 def test_detail_basic(tmpdir):
     path = f"{tmpdir}/{inspect.stack()[0][3]}"
     spark.range(10000).repartition(1000).write.format("delta").save(path)
-
     delta_table = DeltaTable.forPath(spark, path)
     humanized_details = hydro.detail(delta_table)
-    print(humanized_details.collect()[0].asDict())
-
-    raw_details = humanized_details.collect()[0].asDict()
-    # presented_details = {k: raw_details[k] for k in ['numFiles', 'size']}
-    # expected = {'numFiles': '1,000', 'size': '523.39 KiB'}
-    # assert presented_details == expected
-    assert raw_details["numFiles"] == "1,000" and raw_details["size"].endswith(
+    raw_details = humanized_details
+    assert raw_details["num_files"] == "1,000" and raw_details["size"].endswith(
         "KiB",
     )
 
