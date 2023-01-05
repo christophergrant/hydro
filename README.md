@@ -8,7 +8,7 @@ Hydro is a collection of Apache Spark and Linux Foundation Delta Lake related to
 
 Sometimes you need to get a delta table's fields. All of them.
 
-Spark lets you do this, but only gives you the top-level fields. Real life data is often more complicated and nested. 
+Spark lets you do this, but only gives you the top-level fields. Real life data is often more complicated and nested.
 
 `hydro.fields` gives us what we need.
 
@@ -76,7 +76,7 @@ Originally this project was going to be `hydrologist` but that's way too long an
 
 A hydrologist is a person who studies water and its movement. Delta Lake, Data Lake, Lakehouse => water.
 
-## Philosophy 
+## Philosophy
 
 Minimalism in almost everything.
 
