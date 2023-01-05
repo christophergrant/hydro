@@ -13,17 +13,17 @@ DETAIL_SCHEMA_JSON = '{"fields":[{"metadata":{},"name":"createdAt","nullable":tr
 
 def _humanize_bytes(num_bytes: float) -> str:
     # ChatGPT 🤖 prompt: "write a python program that converts bytes to their proper units (kb, mb, gb, tb, pb, etc)" # noqa: E501
-    units = ['bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB']
+    units = ["bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"]
     i = 0
     while num_bytes >= 1024 and i < len(units) - 1:
         num_bytes /= 1024
         i += 1
-    return f'{num_bytes:.2f} {units[i]}'
+    return f"{num_bytes:.2f} {units[i]}"
 
 
 def _snapshot_allfiles(delta_table: DeltaTable) -> DataFrame:
     spark = delta_table.toDF().sparkSession
-    location = delta_table.detail().collect()[0]['location']
+    location = delta_table.detail().collect()[0]["location"]
 
     delta_log = spark._jvm.org.apache.spark.sql.delta.DeltaLog.forTable(
         spark._jsparkSession,
@@ -34,10 +34,10 @@ def _snapshot_allfiles(delta_table: DeltaTable) -> DataFrame:
 
 def detail(delta_table: DeltaTable) -> DataFrame:
     machine_detail = delta_table.detail().collect()[0].asDict()
-    machine_detail['numFiles'] = f"{machine_detail['numFiles']:,}"
+    machine_detail["numFiles"] = f"{machine_detail['numFiles']:,}"
 
-    machine_detail['size'] = _humanize_bytes(machine_detail['sizeInBytes'])
-    del machine_detail['sizeInBytes']
+    machine_detail["size"] = _humanize_bytes(machine_detail["sizeInBytes"])
+    del machine_detail["sizeInBytes"]
 
     spark = delta_table.toDF().sparkSession
     schema = StructType.fromJson(json.loads(DETAIL_SCHEMA_JSON))
@@ -48,9 +48,9 @@ def get_table_zordering(delta_table: DeltaTable) -> DataFrame:
     return (
         delta_table.history()
         .filter("operation == 'OPTIMIZE'")
-        .filter('operationParameters.zOrderBy IS NOT NULL')
-        .select('operationParameters.zOrderBy')
-        .groupBy('zOrderBy')
+        .filter("operationParameters.zOrderBy IS NOT NULL")
+        .select("operationParameters.zOrderBy")
+        .groupBy("zOrderBy")
         .count()
     )
 
@@ -64,16 +64,20 @@ def fields(
     schema = delta_table.toDF().schema
 
     def get_leaf_fields(
-        struct: StructType, include_types: bool,
+        struct: StructType,
+        include_types: bool,
     ) -> list[tuple[str, DataType] | str]:
         def _get_leaf_fields(
-            struct: StructType, prefix: str,
+            struct: StructType,
+            prefix: str,
         ) -> list[tuple[str, DataType] | str]:
             fields: list[tuple[str, DataType] | str] = []
             for field in struct:
                 if isinstance(field.dataType, StructType):
                     fields.extend(
-                        _get_leaf_fields(field.dataType, prefix + field.name + '.'),  # noqa: E501
+                        _get_leaf_fields(
+                            field.dataType, prefix + field.name + "."
+                        ),  # noqa: E501
                     )
                 else:
                     if include_types:
@@ -82,6 +86,6 @@ def fields(
                         fields.append(prefix + field.name)
             return fields
 
-        return _get_leaf_fields(struct, '')
+        return _get_leaf_fields(struct, "")
 
     return get_leaf_fields(schema, include_types)
