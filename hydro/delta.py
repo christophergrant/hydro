@@ -20,7 +20,7 @@ def scd(
     effective_ts: str,
     end_ts: str = None,
     scd_type: int = 2,
-):
+) -> DeltaTable:
     """
 
     :param delta_table:
@@ -178,8 +178,9 @@ def deduplicate(
     temp_path: str,
     keys: list[str] | str,
     tiebreaking_columns=None,
-):
+) -> DeltaTable:
     """
+    Deduplicate takes an existing Delta table and modifies it, in place.
 
     :param delta_table:
     :param temp_path:
@@ -238,6 +239,13 @@ def partial_update_set(
     source_alias: str,
     target_alias: str,
 ) -> F.col:
+    """
+
+    :param fields:
+    :param source_alias:
+    :param target_alias:
+    :return:
+    """
     return {
         field: F.coalesce(f'{source_alias}.{field}', f'{target_alias}.{field}')
         for field in fields
@@ -245,6 +253,11 @@ def partial_update_set(
 
 
 def partition_stats(delta_table: DeltaTable) -> DataFrame:
+    """
+
+    :param delta_table:
+    :return:
+    """
     allfiles = _snapshot_allfiles(delta_table)
     detail = DetailOutput(delta_table)
     partition_columns = [f'partitionValues.{col}' for col in detail.partition_columns]
@@ -257,6 +270,11 @@ def partition_stats(delta_table: DeltaTable) -> DataFrame:
 
 
 def get_table_zordering(delta_table: DeltaTable) -> DataFrame:
+    """
+
+    :param delta_table:
+    :return:
+    """
     return (
         delta_table.history()
         .filter("operation == 'OPTIMIZE'")
@@ -267,7 +285,23 @@ def get_table_zordering(delta_table: DeltaTable) -> DataFrame:
     )
 
 
+def detail(delta_table: DeltaTable) -> dict[Any, Any]:
+    """
+
+    :param delta_table:
+    :return:
+    """
+    detail_output = DetailOutput(delta_table)
+    detail_output.humanize()
+    return detail_output.to_dict()
+
+
 def detail_enhanced(delta_table: DeltaTable) -> dict[Any, Any]:
+    """
+
+    :param delta_table:
+    :return:
+    """
     details = detail(delta_table)
     allfiles = _snapshot_allfiles(delta_table)
     partition_columns = [
@@ -295,12 +329,6 @@ def detail_enhanced(delta_table: DeltaTable) -> dict[Any, Any]:
     partition_count = allfiles.select(*partition_columns).distinct().count()
     details['partition_count'] = _humanize_number(partition_count)
     return details
-
-
-def detail(delta_table: DeltaTable) -> dict[Any, Any]:
-    detail_output = DetailOutput(delta_table)
-    detail_output.humanize()
-    return detail_output.to_dict()
 
 
 def _snapshot_allfiles(delta_table: DeltaTable) -> DataFrame:
