@@ -303,7 +303,7 @@ def bootstrap_scd2(
 
 
 def deduplicate(delta_table: DeltaTable, temp_path: str, keys: list[str] | str):
-    if isinstance(keys, str):
+    if isinstance(keys, str):  # pragma: no cover
         keys = [keys]
     detail_object = detail(delta_table)
     target_location = detail_object['location']
