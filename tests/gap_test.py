@@ -297,8 +297,7 @@ def test_scd_type1(tmpdir):
     ]
     assert presented == expected
 
-
-def test_bootstrap_scd2(tmpdir):
+def test_bootstrap_scd2_path(tmpdir):
     path = f"{tmpdir}/{inspect.stack()[0][3]}"
     target_data = [
         {"id": 1, "location": "Southern California", "ts": "1969-01-01 00:00:00"},
@@ -321,6 +320,35 @@ def test_bootstrap_scd2(tmpdir):
             "end_ts": None,
         },
     ]
+    assert sorted(presented, key=lambda x: x["ts"]) == sorted(
+        expected, key=lambda x: x["ts"]
+    )
+
+
+def test_bootstrap_scd2_tableidentifier(tmpdir):
+    path = f"{tmpdir}/{inspect.stack()[0][3]}"
+    target_data = [
+        {"id": 1, "location": "Southern California", "ts": "1969-01-01 00:00:00"},
+        {"id": 1, "location": "Northern California", "ts": "2019-11-01 00:00:00"},
+    ]
+    df = spark.createDataFrame(target_data)
+    delta_table = hydro.bootstrap_scd2(df, "id", "ts", "end_ts", table_identifier="jetfuel")
+    presented = _df_to_dict(delta_table)
+    expected = [
+        {
+            "id": 1,
+            "location": "Southern California",
+            "ts": "1969-01-01 00:00:00",
+            "end_ts": "2019-11-01 00:00:00",
+        },
+        {
+            "id": 1,
+            "location": "Northern California",
+            "ts": "2019-11-01 00:00:00",
+            "end_ts": None,
+        },
+    ]
+    spark.sql("DROP TABLE IF EXISTS jetfuel") # TODO: lol...
     assert sorted(presented, key=lambda x: x["ts"]) == sorted(
         expected, key=lambda x: x["ts"]
     )

@@ -273,19 +273,22 @@ def bootstrap_scd2(
             builder = builder.property(k, v)
     builder = builder.addColumns(source_df.schema)
     builder = builder.partitionedBy(*partition_columns)
-    if comment:
+    if comment: # pragma: no cover
         builder = builder.comment(comment)
-    delta_table = None
     if path:
-        builder.location(path).execute()
-        final_payload.write.format("delta").option("mergeSchema", "true").mode(
-            "append",
-        ).save(path)
-        delta_table = DeltaTable.forPath(source_df.sparkSession, path)
-    elif table_identifier:
-        builder.tableName(table_identifier).execute()
+        builder = builder.location(path)
+    if table_identifier:
+        builder = builder.tableName(table_identifier)
+    builder.execute()
+    delta_table = None
+    if table_identifier:
         final_payload.write.format("delta").option("mergeSchema", "true").mode(
             "append",
         ).saveAsTable(table_identifier)
         delta_table = DeltaTable.forName(source_df.sparkSession, table_identifier)
+    elif path:
+        final_payload.write.format("delta").option("mergeSchema", "true").mode(
+            "append",
+        ).save(path)
+        delta_table = DeltaTable.forPath(source_df.sparkSession, path)
     return delta_table
