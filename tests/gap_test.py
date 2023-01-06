@@ -11,8 +11,6 @@ from pyspark.sql.types import *
 from pyspark.sql import DataFrame
 from typing import Any
 
-from pyspark.sql.utils import QueryExecutionException
-
 import hydro
 
 builder = (
@@ -39,10 +37,20 @@ def _df_to_dict(df: DataFrame | DeltaTable) -> list[dict[Any, Any]]:
     if isinstance(df, DeltaTable):
         df = df.toDF()
     if df.count() > 10:
-        raise QueryExecutionException(
-            f"DataFrame {df} over 10 rows, not materializing. Was this an accident?"
+        raise OverflowError(
+            f"DataFrame over 10 rows, not materializing. Was this an accident?"
         )
     return [row.asDict(recursive=True) for row in df.collect()]
+
+
+def test_df_to_dict_exception():
+    df = spark.range(11)
+    with pytest.raises(OverflowError) as exception:
+        _df_to_dict(df)
+    assert (
+        exception.value.args[0]
+        == "DataFrame over 10 rows, not materializing. Was this an accident?"
+    )
 
 
 def test_snapshot_allfiles_basic(tmpdir):
@@ -297,6 +305,7 @@ def test_scd_type1(tmpdir):
     ]
     assert presented == expected
 
+
 def test_bootstrap_scd2_path(tmpdir):
     path = f"{tmpdir}/{inspect.stack()[0][3]}"
     target_data = [
@@ -332,7 +341,9 @@ def test_bootstrap_scd2_tableidentifier(tmpdir):
         {"id": 1, "location": "Northern California", "ts": "2019-11-01 00:00:00"},
     ]
     df = spark.createDataFrame(target_data)
-    delta_table = hydro.bootstrap_scd2(df, "id", "ts", "end_ts", table_identifier="jetfuel")
+    delta_table = hydro.bootstrap_scd2(
+        df, "id", "ts", "end_ts", table_identifier="jetfuel"
+    )
     presented = _df_to_dict(delta_table)
     expected = [
         {
@@ -348,7 +359,7 @@ def test_bootstrap_scd2_tableidentifier(tmpdir):
             "end_ts": None,
         },
     ]
-    spark.sql("DROP TABLE IF EXISTS jetfuel") # TODO: lol...
+    spark.sql("DROP TABLE IF EXISTS jetfuel")  # TODO: lol...
     assert sorted(presented, key=lambda x: x["ts"]) == sorted(
         expected, key=lambda x: x["ts"]
     )

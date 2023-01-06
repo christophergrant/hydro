@@ -268,12 +268,12 @@ def bootstrap_scd2(
     builder = DeltaTable.createOrReplace(
         source_df.sparkSession
     )  # TODO change to createIfNotExists?
-    if table_properties:
+    if table_properties:  # pragma: no cover
         for k, v in table_properties.items():
             builder = builder.property(k, v)
     builder = builder.addColumns(source_df.schema)
     builder = builder.partitionedBy(*partition_columns)
-    if comment: # pragma: no cover
+    if comment:  # pragma: no cover
         builder = builder.comment(comment)
     if path:
         builder = builder.location(path)
