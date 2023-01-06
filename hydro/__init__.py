@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import pyspark.sql.functions as F
 from delta import DeltaTable
+from pyspark.sql import Column
 from pyspark.sql import DataFrame
 from pyspark.sql import Window
 from pyspark.sql.types import DataType
@@ -148,7 +149,7 @@ def fields(
                         _get_leaf_fields(
                             field.dataType,
                             prefix + field.name + '.',
-                        ),  # noqa: E501
+                        ),
                     )
                 else:
                     if include_types:
@@ -298,4 +299,34 @@ def bootstrap_scd2(
             'append',
         ).save(path)
         delta_table = DeltaTable.forPath(source_df.sparkSession, path)
+    return delta_table
+
+
+def deduplicate(delta_table: DeltaTable, temp_path: str, keys: list[str] | str):
+    if isinstance(keys, str):
+        keys = [keys]
+    detail_object = detail(delta_table)
+    target_location = detail_object['location']
+    count_col = uuid4().hex
+    df = delta_table.toDF()
+    spark = df.sparkSession
+    window = Window.partitionBy(keys)
+    dupes = (
+        df.withColumn(count_col, F.count('*').over(window))
+        .filter(F.col(count_col) > 1)
+        .drop(count_col)
+    )
+    dupes.drop_duplicates().write.format('delta').save(  # this isn't really sufficient.
+        temp_path,
+    )
+    merge_key_condition = ' AND '.join(
+        [f'source.{key} = target.{key}' for key in keys],
+    )
+    delta_table.alias('target').merge(
+        dupes.select(keys).distinct().alias('source'),
+        merge_key_condition,
+    ).whenMatchedDelete().execute()
+    spark.read.format('delta').load(temp_path).write.format('delta').mode(
+        'append',
+    ).save(target_location)
     return delta_table

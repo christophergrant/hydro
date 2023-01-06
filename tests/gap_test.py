@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 from typing import Any
+from uuid import uuid4
 
 import pyspark.sql.functions as F
 import pytest
@@ -33,7 +34,7 @@ builder = (
 spark = configure_spark_with_delta_pip(builder).getOrCreate()
 
 
-def _df_to_dict(df: DataFrame | DeltaTable) -> list[dict[Any, Any]]:
+def _df_to_list_of_dict(df: DataFrame | DeltaTable) -> list[dict[Any, Any]]:
     if isinstance(df, DeltaTable):
         df = df.toDF()
     if df.count() > 10:
@@ -46,7 +47,7 @@ def _df_to_dict(df: DataFrame | DeltaTable) -> list[dict[Any, Any]]:
 def test_df_to_dict_exception():
     df = spark.range(11)
     with pytest.raises(OverflowError) as exception:
-        _df_to_dict(df)
+        _df_to_list_of_dict(df)
     assert (
         exception.value.args[0] ==
         'DataFrame over 10 rows, not materializing. Was this an accident?'
@@ -95,7 +96,7 @@ def test_get_table_zordering_twocol(tmpdir):
         'delta',
     ).save(path)
     delta_table.optimize().executeZOrderBy('id', 'id2')
-    presented = _df_to_dict(hydro.get_table_zordering(delta_table))
+    presented = _df_to_list_of_dict(hydro.get_table_zordering(delta_table))
     expected = [
         {'zOrderBy': '["id","id2"]', 'count': 1},
         {'zOrderBy': '["id"]', 'count': 1},
@@ -175,7 +176,7 @@ def test_partition_stats(tmpdir):
     ).format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
 
-    presented = _df_to_dict(hydro.partition_stats(delta_table))
+    presented = _df_to_list_of_dict(hydro.partition_stats(delta_table))
     expected = [
         {
             'part': '0',
@@ -258,7 +259,7 @@ def test_scd_type2(tmpdir):
         {'id': 1, 'location': 'Northern California', 'ts': '2019-11-01 00:00:00'},
     ]
     df = spark.createDataFrame(source_data)
-    presented = _df_to_dict(hydro.scd(delta_table, df, 'id', 'ts', 'end_ts'))
+    presented = _df_to_list_of_dict(hydro.scd(delta_table, df, 'id', 'ts', 'end_ts'))
     expected = [
         {
             'id': 1,
@@ -291,7 +292,7 @@ def test_scd_type1(tmpdir):
         {'id': 1, 'location': 'Northern California', 'ts': '2019-11-01 00:00:00'},
     ]
     df = spark.createDataFrame(source_data)
-    presented = _df_to_dict(
+    presented = _df_to_list_of_dict(
         hydro.scd(delta_table, df, 'id', 'ts', scd_type=1),
     )
     expected = [
@@ -312,7 +313,7 @@ def test_bootstrap_scd2_path(tmpdir):
     ]
     df = spark.createDataFrame(target_data)
     delta_table = hydro.bootstrap_scd2(df, 'id', 'ts', 'end_ts', path=path)
-    presented = _df_to_dict(delta_table)
+    presented = _df_to_list_of_dict(delta_table)
     expected = [
         {
             'id': 1,
@@ -347,7 +348,7 @@ def test_bootstrap_scd2_tableidentifier(tmpdir):
         'end_ts',
         table_identifier='jetfuel',
     )
-    presented = _df_to_dict(delta_table)
+    presented = _df_to_list_of_dict(delta_table)
     expected = [
         {
             'id': 1,
@@ -371,8 +372,12 @@ def test_bootstrap_scd2_tableidentifier(tmpdir):
 
 def test_bootstrap_scd2_nopath_notable():
     df = spark.range(10)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as exception:
         hydro.bootstrap_scd2(df, ['id'], 'ts', 'end_ts')
+    assert (
+        exception.value.args[0] ==
+        'Need to specify one (or both) of `path` and `table_identifier`'
+    )
 
 
 def test__scd2_no_endts(tmpdir):
@@ -396,3 +401,20 @@ def test_scd_invalid_type(tmpdir):
     with pytest.raises(ValueError) as exception:
         hydro.scd(delta_table, df, ['id'], 'ts', 'end_ts', scd_type=69)
     assert exception.value.args[0] == '`scd_type` not of (1,2)'
+
+
+def test_deduplicate(tmpdir):
+    path = f'{tmpdir}/{inspect.stack()[0][3]}'
+    staging_path = f'{tmpdir}/{uuid4().hex}'
+    df = spark.range(1).union(spark.range(2))
+    data = [
+        {'id': 1, 'ts': 1},
+        {'id': 1, 'ts': 2},
+    ]
+    df.write.format('delta').save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+    result = hydro.deduplicate(delta_table, staging_path, 'id')
+    expected = [{'id': 1}, {'id': 0}]
+    assert sorted(_df_to_list_of_dict(result), key=lambda x: x['id']) == sorted(
+        expected, key=lambda x: x['id'],
+    )
