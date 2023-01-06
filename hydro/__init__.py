@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from typing import Any
+from uuid import uuid4
 
 import pyspark.sql.functions as F
 from delta import DeltaTable
@@ -222,10 +223,15 @@ def scd(
         keys: list[str] | str,
         effective_ts: str,
     ):
-        window = Window.partitionBy(keys).orderBy(effective_ts)
-        final_payload = source.withColumn(
-            end_ts,
-            F.row_number().over(window),
+        window = Window.partitionBy(keys).orderBy(F.col(effective_ts).desc())
+        row_number_uuid = uuid4().hex  # avoid column collisions by using uuid
+        final_payload = (
+            source.withColumn(
+                row_number_uuid,
+                F.row_number().over(window),
+            )
+            .filter(F.col(row_number_uuid) == 1)
+            .drop(row_number_uuid)
         )
         merge_key_condition = ' AND '.join(
             [f'source.{key} = target.{key}' for key in keys],

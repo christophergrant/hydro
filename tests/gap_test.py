@@ -274,7 +274,8 @@ def test_scd_type2(tmpdir):
         },
     ]
     assert sorted(presented, key=lambda x: x['ts']) == sorted(
-        expected, key=lambda x: x['ts'],
+        expected,
+        key=lambda x: x['ts'],
     )
 
 
@@ -283,24 +284,21 @@ def test_scd_type1(tmpdir):
     target_data = [
         {'id': 1, 'location': 'Southern California', 'ts': '1969-01-01 00:00:00'},
     ]
-    spark.createDataFrame(target_data).withColumn(
-        'end_ts',
-        F.lit(None).cast('string'),
-    ).write.format('delta').save(path)
+    spark.createDataFrame(target_data).write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
     source_data = [
+        {'id': 1, 'location': 'Western California', 'ts': '2011-01-01 00:00:00'},
         {'id': 1, 'location': 'Northern California', 'ts': '2019-11-01 00:00:00'},
     ]
     df = spark.createDataFrame(source_data)
     presented = _df_to_dict(
-        hydro.scd(delta_table, df, 'id', 'ts', 'end_ts', scd_type=1),
+        hydro.scd(delta_table, df, 'id', 'ts', scd_type=1),
     )
     expected = [
         {
             'id': 1,
             'location': 'Northern California',
             'ts': '2019-11-01 00:00:00',
-            'end_ts': '1',
         },
     ]
     assert presented == expected
@@ -330,7 +328,8 @@ def test_bootstrap_scd2_path(tmpdir):
         },
     ]
     assert sorted(presented, key=lambda x: x['ts']) == sorted(
-        expected, key=lambda x: x['ts'],
+        expected,
+        key=lambda x: x['ts'],
     )
 
 
@@ -342,7 +341,11 @@ def test_bootstrap_scd2_tableidentifier(tmpdir):
     ]
     df = spark.createDataFrame(target_data)
     delta_table = hydro.bootstrap_scd2(
-        df, 'id', 'ts', 'end_ts', table_identifier='jetfuel',
+        df,
+        'id',
+        'ts',
+        'end_ts',
+        table_identifier='jetfuel',
     )
     presented = _df_to_dict(delta_table)
     expected = [
@@ -361,7 +364,8 @@ def test_bootstrap_scd2_tableidentifier(tmpdir):
     ]
     spark.sql('DROP TABLE IF EXISTS jetfuel')  # TODO: lol...
     assert sorted(presented, key=lambda x: x['ts']) == sorted(
-        expected, key=lambda x: x['ts'],
+        expected,
+        key=lambda x: x['ts'],
     )
 
 
@@ -384,7 +388,7 @@ def test__scd2_no_endts(tmpdir):
     )
 
 
-def test__scd_invalid_type(tmpdir):
+def test_scd_invalid_type(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
     df = spark.range(10)
     df.write.format('delta').save(path)
