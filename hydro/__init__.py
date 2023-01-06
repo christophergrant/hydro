@@ -239,7 +239,7 @@ def scd(
     elif scd_type == 1:
         return _scd1(delta_table, source, keys, effective_ts)
     else:
-        raise ValueError("type not supported")
+        raise ValueError("`scd_type` not of (1,2)")
 
 
 def bootstrap_scd2(
@@ -254,7 +254,7 @@ def bootstrap_scd2(
     table_identifier: str = None,
 ) -> DeltaTable:
     if not path and not table_identifier:
-        raise ValueError()
+        raise ValueError("Need to specify one (or both) of `path` and `table_identifier`")
     window = Window.partitionBy(keys).orderBy(effective_ts)
     final_payload = source_df.withColumn(
         end_ts,

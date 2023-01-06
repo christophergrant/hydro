@@ -3,12 +3,15 @@ from __future__ import annotations
 import inspect
 
 import pyspark.sql.functions as F
+import pytest
 from delta import configure_spark_with_delta_pip
 from delta import DeltaTable
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 from pyspark.sql import DataFrame
 from typing import Any
+
+from pyspark.sql.utils import QueryExecutionException
 
 import hydro
 
@@ -36,7 +39,7 @@ def _df_to_dict(df: DataFrame | DeltaTable) -> list[dict[Any, Any]]:
     if isinstance(df, DeltaTable):
         df = df.toDF()
     if df.count() > 10:
-        raise ValueError()
+        raise QueryExecutionException(f"DataFrame {df} over 10 rows, not materializing. Was this an accident?")
     return [row.asDict(recursive=True) for row in df.collect()]
 
 
@@ -319,3 +322,10 @@ def test_bootstrap_scd2(tmpdir):
     assert sorted(presented, key=lambda x: x["ts"]) == sorted(
         expected, key=lambda x: x["ts"]
     )
+
+
+def test_bootstrap_scd2_nopath_notable():
+    df = spark.range(10)
+    with pytest.raises(ValueError):
+        hydro.bootstrap_scd2(df, ["id"], "ts", "end_ts")
+
