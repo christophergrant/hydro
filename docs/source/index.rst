@@ -1,14 +1,18 @@
-.. hydro documentation master file, created by
-   sphinx-quickstart on Fri Jan  6 08:57:14 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to hydro's documentation!
 =================================
+
+.. automodule:: hydro.__init__
+    :members:
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+AYO
+=================================
+
+.. toctree::
+   ayo.md
 
 
 
