@@ -406,15 +406,36 @@ def test_scd_invalid_type(tmpdir):
 def test_deduplicate(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
     staging_path = f'{tmpdir}/{uuid4().hex}'
-    df = spark.range(1).union(spark.range(2))
+    data = [
+        {'id': 1, 'ts': 1},
+        {'id': 1, 'ts': 1},
+    ]
+    df = spark.createDataFrame(data)
+    df.write.format('delta').save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+    result = hydro.deduplicate(delta_table, staging_path, 'id')
+    expected = [{'id': 1, 'ts': 1}]
+    assert sorted(_df_to_list_of_dict(result), key=lambda x: x['id']) == sorted(
+        expected,
+        key=lambda x: x['id'],
+    )
+
+
+def test_deduplicate_tiebreaking(tmpdir):
+    path = f'{tmpdir}/{inspect.stack()[0][3]}'
+    staging_path = f'{tmpdir}/{uuid4().hex}'
     data = [
         {'id': 1, 'ts': 1},
         {'id': 1, 'ts': 2},
     ]
+    df = spark.createDataFrame(data)
     df.write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
-    result = hydro.deduplicate(delta_table, staging_path, 'id')
-    expected = [{'id': 1}, {'id': 0}]
+    result = hydro.deduplicate(
+        delta_table, staging_path, 'id', tiebreaking_columns=['ts'],
+    )
+    expected = [{'id': 1, 'ts': 2}]
     assert sorted(_df_to_list_of_dict(result), key=lambda x: x['id']) == sorted(
-        expected, key=lambda x: x['id'],
+        expected,
+        key=lambda x: x['id'],
     )

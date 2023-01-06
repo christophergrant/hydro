@@ -302,7 +302,12 @@ def bootstrap_scd2(
     return delta_table
 
 
-def deduplicate(delta_table: DeltaTable, temp_path: str, keys: list[str] | str):
+def deduplicate(
+    delta_table: DeltaTable,
+    temp_path: str,
+    keys: list[str] | str,
+    tiebreaking_columns: list[str] = [],
+):
     if isinstance(keys, str):  # pragma: no cover
         keys = [keys]
     detail_object = detail(delta_table)
@@ -311,14 +316,30 @@ def deduplicate(delta_table: DeltaTable, temp_path: str, keys: list[str] | str):
     df = delta_table.toDF()
     spark = df.sparkSession
     window = Window.partitionBy(keys)
+
     dupes = (
         df.withColumn(count_col, F.count('*').over(window))
         .filter(F.col(count_col) > 1)
         .drop(count_col)
     )
-    dupes.drop_duplicates().write.format('delta').save(  # this isn't really sufficient.
-        temp_path,
-    )
+    if tiebreaking_columns:
+        row_number_col = uuid4().hex
+        tiebreaking_desc = [F.col(col).desc() for col in tiebreaking_columns]
+        window = window.orderBy(tiebreaking_desc)
+        deduped = (
+            dupes.withColumn(row_number_col, F.row_number().over(window))
+            .filter(F.col(row_number_col) == 1)
+            .drop(row_number_col)
+        )
+        deduped.write.format('delta').save(  # this isn't really sufficient.
+            temp_path,
+        )
+    else:
+        dupes.drop_duplicates(keys).write.format(
+            'delta',
+        ).save(  # this isn't really sufficient.
+            temp_path,
+        )
     merge_key_condition = ' AND '.join(
         [f'source.{key} = target.{key}' for key in keys],
     )
