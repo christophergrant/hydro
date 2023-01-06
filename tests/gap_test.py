@@ -39,7 +39,9 @@ def _df_to_dict(df: DataFrame | DeltaTable) -> list[dict[Any, Any]]:
     if isinstance(df, DeltaTable):
         df = df.toDF()
     if df.count() > 10:
-        raise QueryExecutionException(f"DataFrame {df} over 10 rows, not materializing. Was this an accident?")
+        raise QueryExecutionException(
+            f"DataFrame {df} over 10 rows, not materializing. Was this an accident?"
+        )
     return [row.asDict(recursive=True) for row in df.collect()]
 
 
@@ -329,3 +331,25 @@ def test_bootstrap_scd2_nopath_notable():
     with pytest.raises(ValueError):
         hydro.bootstrap_scd2(df, ["id"], "ts", "end_ts")
 
+
+def test__scd2_no_endts(tmpdir):
+    path = f"{tmpdir}/{inspect.stack()[0][3]}"
+    df = spark.range(10)
+    df.write.format("delta").save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+    with pytest.raises(ValueError) as exception:
+        hydro.scd(delta_table, df, ["id"], "ts")
+    assert (
+        exception.value.args[0]
+        == "`end_ts` parameter not provided, type 2 scd requires this"
+    )
+
+
+def test__scd_invalid_type(tmpdir):
+    path = f"{tmpdir}/{inspect.stack()[0][3]}"
+    df = spark.range(10)
+    df.write.format("delta").save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+    with pytest.raises(ValueError) as exception:
+        hydro.scd(delta_table, df, ["id"], "ts", "end_ts", scd_type=69)
+    assert exception.value.args[0] == "`scd_type` not of (1,2)"

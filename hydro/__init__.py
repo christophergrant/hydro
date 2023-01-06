@@ -180,7 +180,7 @@ def scd(
     end_ts: str = None,
     scd_type: int = 2,
 ):
-    if isinstance(keys, str):
+    if isinstance(keys, str):  # pragma: no cover
         keys = [keys]
 
     def _scd2(
@@ -191,7 +191,9 @@ def scd(
         end_ts: str,
     ):
         if not end_ts:
-            raise ValueError()
+            raise ValueError(
+                "`end_ts` parameter not provided, type 2 scd requires this"
+            )
 
         updated_rows = (
             delta_table.toDF()
@@ -254,7 +256,9 @@ def bootstrap_scd2(
     table_identifier: str = None,
 ) -> DeltaTable:
     if not path and not table_identifier:
-        raise ValueError("Need to specify one (or both) of `path` and `table_identifier`")
+        raise ValueError(
+            "Need to specify one (or both) of `path` and `table_identifier`"
+        )
     window = Window.partitionBy(keys).orderBy(effective_ts)
     final_payload = source_df.withColumn(
         end_ts,
