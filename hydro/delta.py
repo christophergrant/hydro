@@ -177,16 +177,16 @@ def deduplicate(
     delta_table: DeltaTable,
     temp_path: str,
     keys: list[str] | str,
-    tiebreaking_columns=None,
+    tiebreaking_columns: list[str] = None,
 ) -> DeltaTable:
     """
-    Deduplicate takes an existing Delta table and modifies it, in place.
+    Removes duplicates from an existing Delta Lake table.
 
-    :param delta_table:
-    :param temp_path:
-    :param keys:
-    :param tiebreaking_columns:
-    :return:
+    :param delta_table: The target Delta table that contains duplicates.
+    :param temp_path: A temporary location
+    :param keys: A list of column names used to distinguish rows. The order of this list does not matter.
+    :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements weighing more than lesser ones.
+    :return: The same Delta table as **delta_table**
     """
     if tiebreaking_columns is None:
         tiebreaking_columns = []

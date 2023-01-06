@@ -17,5 +17,3 @@ jobs:
     with:
       env: '["py37", "py38", "py39"]'
       os: ubuntu-latest
-  sphinxy:
-    uses: ammaraskar/sphinx-action@0.4
