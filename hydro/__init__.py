@@ -306,8 +306,11 @@ def deduplicate(
     delta_table: DeltaTable,
     temp_path: str,
     keys: list[str] | str,
-    tiebreaking_columns: list[str] = [],
+    tiebreaking_columns=None,
 ):
+    if tiebreaking_columns is None:
+        tiebreaking_columns = []
+
     if isinstance(keys, str):  # pragma: no cover
         keys = [keys]
     detail_object = detail(delta_table)
