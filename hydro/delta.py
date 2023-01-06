@@ -21,6 +21,16 @@ def scd(
     end_ts: str = None,
     scd_type: int = 2,
 ):
+    """
+
+    :param delta_table:
+    :param source:
+    :param keys:
+    :param effective_ts:
+    :param end_ts:
+    :param scd_type:
+    :return:
+    """
     if isinstance(keys, str):  # pragma: no cover
         keys = [keys]
 
@@ -31,6 +41,15 @@ def scd(
         effective_ts: str,
         end_ts: str,
     ):
+        """
+
+        :param delta_table:
+        :param source:
+        :param keys:
+        :param effective_ts:
+        :param end_ts:
+        :return:
+        """
         if not end_ts:
             raise ValueError(
                 '`end_ts` parameter not provided, type 2 scd requires this',
@@ -101,6 +120,19 @@ def bootstrap_scd2(
     path: str = None,
     table_identifier: str = None,
 ) -> DeltaTable:
+    """
+
+    :param source_df:
+    :param keys:
+    :param effective_ts:
+    :param end_ts:
+    :param table_properties:
+    :param partition_columns:
+    :param comment:
+    :param path:
+    :param table_identifier:
+    :return:
+    """
     if not path and not table_identifier:
         raise ValueError(
             'Need to specify one (or both) of `path` and `table_identifier`',
@@ -147,6 +179,14 @@ def deduplicate(
     keys: list[str] | str,
     tiebreaking_columns=None,
 ):
+    """
+
+    :param delta_table:
+    :param temp_path:
+    :param keys:
+    :param tiebreaking_columns:
+    :return:
+    """
     if tiebreaking_columns is None:
         tiebreaking_columns = []
 

@@ -1,19 +1,21 @@
-Welcome to hydro's documentation!
+hydro's documentation
 =================================
-
-.. automodule:: hydro.__init__
-    :members:
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-AYO
+Delta Lake
 =================================
 
 .. toctree::
-   ayo.md
+   delta.md
 
+Spark
+=================================
+
+.. toctree::
+   spark.md
 
 
 Indices and tables
