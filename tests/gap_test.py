@@ -113,8 +113,8 @@ def test_fields_nested_basic(tmpdir):
         path,
     )
     delta_table = DeltaTable.forPath(spark, path)
-    provided = hydro.spark.fields(delta_table, True)
-    expected = [('id', LongType()), ('s1.c1', StringType())]
+    provided = hydro.spark.fields(delta_table)
+    expected = ['id', 's1.c1']
     assert provided == expected
 
 
@@ -125,7 +125,7 @@ def test_fields_nested_array(tmpdir):
         F.struct(F.array(F.lit('data')).alias('a')),
     ).write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
-    provided = hydro.spark.fields(delta_table, True)
+    provided = hydro.spark.fields_with_types(delta_table)
     expected = [('id', LongType()), ('s1.a', ArrayType(StringType(), True))]
     assert provided == expected
 

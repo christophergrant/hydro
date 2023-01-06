@@ -47,7 +47,7 @@ def fields(delta_table: DeltaTable) -> list[str]:
     :param delta_table:
     :return:
     """
-    return _fields(delta_table, True)
+    return _fields(delta_table, False)
 
 
 def fields_with_types(delta_table: DeltaTable) -> list[tuple[str, DataType]]:
@@ -55,4 +55,4 @@ def fields_with_types(delta_table: DeltaTable) -> list[tuple[str, DataType]]:
     :param delta_table:
     :return:
     """
-    return _fields(delta_table, False)
+    return _fields(delta_table, True)
