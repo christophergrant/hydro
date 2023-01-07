@@ -6,6 +6,10 @@ hydro is a collection of Python-based [Apache Spark](https://spark.apache.org/) 
 
 See [Key Functionality](#key-functionality-) for concrete use cases.
 
+## Warning
+
+hydro is not yet ready for production. Use it at your own risk.
+
 ## Installation
 
 ```commandline

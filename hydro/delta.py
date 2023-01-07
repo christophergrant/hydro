@@ -172,7 +172,7 @@ def bootstrap_scd2(
 
 def deduplicate(
     delta_table: DeltaTable,
-    temp_path: str,
+    backup_path: str,
     keys: list[str] | str,
     tiebreaking_columns: list[str] = None,
 ) -> DeltaTable:
@@ -182,7 +182,7 @@ def deduplicate(
     Be careful.
 
     :param delta_table: The target Delta Lake table that contains duplicates.
-    :param temp_path: A temporary location used to stage de-duplicated data. The location that `temp_path` points to needs to be empty.
+    :param backup_path: A temporary location used to stage de-duplicated data. The location that `temp_path` points to needs to be empty.
     :param keys: A list of column names used to distinguish rows. The order of this list does not matter.
     :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements "weighing" more than lesser ones. The columns will be evaluated in descending order. In the event of a tie, you will get non-deterministic results.
     :return: The same Delta Lake table as **delta_table**.
@@ -218,11 +218,11 @@ def deduplicate(
             .drop(row_number_col)
         )
         deduped.write.format('delta').save(
-            temp_path,
+            backup_path,
         )
     else:
         dupes.drop_duplicates(keys).write.format('delta').save(
-            temp_path,
+            backup_path,
         )
     merge_key_condition = ' AND '.join(
         [f'source.{key} = target.{key}' for key in keys],
@@ -231,7 +231,7 @@ def deduplicate(
         dupes.select(keys).distinct().alias('source'),
         merge_key_condition,
     ).whenMatchedDelete().execute()
-    spark.read.format('delta').load(temp_path).write.format('delta').mode(
+    spark.read.format('delta').load(backup_path).write.format('delta').mode(
         'append',
     ).save(target_location)
     return delta_table
