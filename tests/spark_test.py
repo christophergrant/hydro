@@ -14,9 +14,7 @@ from tests import spark
 
 def test_fields_nested_basic(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
-    spark.range(1).withColumn('s1', F.struct(F.lit('a').alias('c1'))).write.format(
-        'delta',
-    ).save(
+    spark.range(1).withColumn('s1', F.struct(F.lit('a').alias('c1'))).write.format('delta').save(
         path,
     )
     delta_table = DeltaTable.forPath(spark, path)
@@ -27,10 +25,9 @@ def test_fields_nested_basic(tmpdir):
 
 def test_fields_nested_array(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
-    spark.range(1).withColumn(
-        's1',
-        F.struct(F.array(F.lit('data')).alias('a')),
-    ).write.format('delta').save(path)
+    spark.range(1).withColumn('s1', F.struct(F.array(F.lit('data')).alias('a'))).write.format(
+        'delta',
+    ).save(path)
     delta_table = DeltaTable.forPath(spark, path)
     provided = hs.fields_with_types(delta_table.toDF())
     expected = [('id', LongType()), ('s1.a', ArrayType(StringType(), True))]

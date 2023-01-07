@@ -52,11 +52,7 @@ def scd(
                 '`end_ts` parameter not provided, type 2 scd requires this',
             )
 
-        updated_rows = (
-            delta_table.toDF()
-            .join(source, keys, 'left_semi')
-            .filter(F.col(end_ts).isNull())
-        )
+        updated_rows = delta_table.toDF().join(source, keys, 'left_semi').filter(F.col(end_ts).isNull())
         combined_rows = updated_rows.unionByName(source, allowMissingColumns=True)
         window = Window.partitionBy(keys).orderBy(effective_ts)
         final_payload = combined_rows.withColumn(
@@ -204,11 +200,7 @@ def deduplicate(
     spark = df.sparkSession
     window = Window.partitionBy(keys)
 
-    dupes = (
-        df.withColumn(count_col, F.count('*').over(window))
-        .filter(F.col(count_col) > 1)
-        .drop(count_col)
-    )
+    dupes = df.withColumn(count_col, F.count('*').over(window)).filter(F.col(count_col) > 1).drop(count_col)
     if tiebreaking_columns:
         row_number_col = uuid4().hex
         tiebreaking_desc = [F.col(col).desc() for col in tiebreaking_columns]
@@ -260,10 +252,7 @@ def partial_update_set(
     if isinstance(delta_frame, DeltaTable):  # pragma: no cover
         delta_frame = delta_frame.toDF()
     fields = hs.fields(delta_frame)
-    return {
-        field: F.coalesce(f'{source_alias}.{field}', f'{target_alias}.{field}')
-        for field in fields
-    }
+    return {field: F.coalesce(f'{source_alias}.{field}', f'{target_alias}.{field}') for field in fields}
 
 
 def partition_stats(delta_table: DeltaTable) -> DataFrame:
@@ -350,9 +339,7 @@ def detail_enhanced(delta_table: DeltaTable) -> dict[Any, Any]:
     """
     details = detail(delta_table)
     allfiles = _snapshot_allfiles(delta_table)
-    partition_columns = [
-        f'partitionValues.{col}' for col in details['partition_columns']
-    ]
+    partition_columns = [f'partitionValues.{col}' for col in details['partition_columns']]
 
     num_records = (
         allfiles.select(
@@ -375,13 +362,7 @@ def detail_enhanced(delta_table: DeltaTable) -> dict[Any, Any]:
     partition_count = allfiles.select(*partition_columns).distinct().count()
     details['partition_count'] = _humanize_number(partition_count)
 
-    version = (
-        delta_table.history()
-        .select('version')
-        .limit(1)
-        .collect()[0]
-        .asDict()['version']
-    )
+    version = delta_table.history().select('version').limit(1).collect()[0].asDict()['version']
     details['version'] = _humanize_number(version)
     return details
 

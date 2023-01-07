@@ -76,9 +76,9 @@ def test_detail_enhanced(tmpdir):
 
 def test_partition_stats(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
-    spark.range(100).withColumn('part', F.col('id') % 5).write.partitionBy(
-        'part',
-    ).format('delta').save(path)
+    spark.range(100).withColumn('part', F.col('id') % 5).write.partitionBy('part').format(
+        'delta',
+    ).save(path)
     delta_table = DeltaTable.forPath(spark, path)
 
     presented = _df_to_list_of_dict(hd.partition_stats(delta_table))
@@ -125,17 +125,14 @@ def test_partition_stats(tmpdir):
 
 def test_partial_update_set_merge(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
-    spark.range(1).withColumn('data', F.lit('data')).withColumn(
-        's1',
-        F.struct(F.lit('a').alias('c1')),
-    ).write.format('delta').save(
+    spark.range(1).withColumn('data', F.lit('data')).withColumn('s1', F.struct(F.lit('a').alias('c1'))).write.format(
+        'delta',
+    ).save(
         path,
     )
     delta_table = DeltaTable.forPath(spark, path)
     source = (
-        spark.range(1)
-        .withColumn('s1', F.struct(F.lit('b').alias('c1')))
-        .withColumn('data', F.lit(None).cast('string'))
+        spark.range(1).withColumn('s1', F.struct(F.lit('b').alias('c1'))).withColumn('data', F.lit(None).cast('string'))
     )
     (
         delta_table.alias('target')
@@ -156,10 +153,9 @@ def test_scd_type2(tmpdir):
     target_data = [
         {'id': 1, 'location': 'Southern California', 'ts': '1969-01-01 00:00:00'},
     ]
-    spark.createDataFrame(target_data).withColumn(
-        'end_ts',
-        F.lit(None).cast('string'),
-    ).write.format('delta').save(path)
+    spark.createDataFrame(target_data).withColumn('end_ts', F.lit(None).cast('string')).write.format(
+        'delta',
+    ).save(path)
     delta_table = DeltaTable.forPath(spark, path)
     source_data = [
         {'id': 1, 'location': 'Northern California', 'ts': '2019-11-01 00:00:00'},
@@ -282,10 +278,7 @@ def test_bootstrap_scd2_nopath_notable():
     df = spark.range(10)
     with pytest.raises(ValueError) as exception:
         hd.bootstrap_scd2(df, ['id'], 'ts', 'end_ts')
-    assert (
-        exception.value.args[0] ==
-        'Need to specify one (or both) of `path` and `table_identifier`'
-    )
+    assert exception.value.args[0] == 'Need to specify one (or both) of `path` and `table_identifier`'
 
 
 def test__scd2_no_endts(tmpdir):
@@ -295,10 +288,7 @@ def test__scd2_no_endts(tmpdir):
     delta_table = DeltaTable.forPath(spark, path)
     with pytest.raises(ValueError) as exception:
         hd.scd(delta_table, df, ['id'], 'ts')
-    assert (
-        exception.value.args[0] ==
-        '`end_ts` parameter not provided, type 2 scd requires this'
-    )
+    assert exception.value.args[0] == '`end_ts` parameter not provided, type 2 scd requires this'
 
 
 def test_scd_invalid_type(tmpdir):
