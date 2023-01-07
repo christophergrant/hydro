@@ -68,9 +68,14 @@ If the `deduplicate` operation fails mid-way, you may need to intervene. In the 
 If Delta Lake ever provides a way to disambiguate between rows without relying on the data (e.g an internal rowid), this could be a single transaction and thus, safer.
 
 
+
+
+
 ```{eval-rst}
 .. autofunction:: hydro.delta.scd
 ```
+
+
 
 
 

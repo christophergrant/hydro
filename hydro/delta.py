@@ -9,6 +9,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql import Window
 
+import hydro.spark
 from hydro import _humanize_bytes
 from hydro import _humanize_number
 
@@ -24,11 +25,11 @@ def scd(
     """
     Slowly Changing Dimensions (SCD) is a data management/engineering technique for handling changes in dimensions.
 
-    (Type 1)[https://en.wikipedia.org/wiki/Slowly_changing_dimension#Type_1:_overwrite] is a simple overwrite, where old data is overwritten with the new.
+    Type 1 is a simple overwrite, where old data is overwritten with the new.
 
-    (Type 2)[https://en.wikipedia.org/wiki/Slowly_changing_dimension#Type_2:_add_new_row] lets you track the history of an entity, creating a new row for each change in state.
+    Type 2 lets you track the history of an entity, creating a new row for each change in state.
 
-    :param delta_table: The Delta Lake table that is to be updated
+    :param delta_table: The Delta Lake table that is to be updated. See `hydro.delta.bootstrap_scd2` if you need to create an SCD2 table.
     :param source: The new data that will be used to update `delta_table`
     :param keys: Column(s) that identify unique entities
     :param effective_ts: The start timestamp for a given row
@@ -232,17 +233,24 @@ def deduplicate(
 
 
 def partial_update_set(
-    fields: list[str],
+    delta_frame: DataFrame | DeltaTable,
     source_alias: str,
     target_alias: str,
 ) -> F.col:
     """
+    Generates an update set for a Delta Lake MERGE operation where the source data provides partial updates.
+    Partial updates in this case are when some columns in the data are NULL, but are meant to be non-destructive, or is there no semantic meaning to the NULLs.
+    In other words, sometimes we want to keep the original value and not overwrite it with a NULL.
+    This is particularly helpful with CDC data.
 
-    :param fields:
-    :param source_alias:
-    :param target_alias:
-    :return:
+    :param delta_frame: A Delta Lake table or DataFrame that describes a source dataframe
+    :param source_alias: A temporary name given to the source data of the MERGE
+    :param target_alias: A temporary name given to the target Delta Table of the MERGE
+    :return: A dictionary that describes non-destructive updates for all fields in `delta_frame`
     """
+    if isinstance(delta_frame, DeltaTable):  # pragma: no cover
+        delta_frame = delta_frame.toDF()
+    fields = hydro.spark.fields(delta_frame)
     return {
         field: F.coalesce(f'{source_alias}.{field}', f'{target_alias}.{field}')
         for field in fields

@@ -114,7 +114,7 @@ def test_fields_nested_basic(tmpdir):
         path,
     )
     delta_table = DeltaTable.forPath(spark, path)
-    provided = hydro.spark.fields(delta_table)
+    provided = hydro.spark.fields(delta_table.toDF())
     expected = ['id', 's1.c1']
     assert provided == expected
 
@@ -126,7 +126,7 @@ def test_fields_nested_array(tmpdir):
         F.struct(F.array(F.lit('data')).alias('a')),
     ).write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
-    provided = hydro.spark.fields_with_types(delta_table)
+    provided = hydro.spark.fields_with_types(delta_table.toDF())
     expected = [('id', LongType()), ('s1.a', ArrayType(StringType(), True))]
     assert provided == expected
 
@@ -149,7 +149,7 @@ def test_fields_docs_example(tmpdir):
     rdd = spark.sparkContext.parallelize([data])
     spark.read.json(rdd).write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
-    better_fieldnames = hydro.spark.fields(delta_table)
+    better_fieldnames = hydro.spark.fields(delta_table.toDF())
     expected = [
         'author.first_name',
         'author.last_name',
@@ -231,7 +231,6 @@ def test_partial_update_set_merge(tmpdir):
         path,
     )
     delta_table = DeltaTable.forPath(spark, path)
-    fields = hydro.spark.fields(delta_table)
     source = (
         spark.range(1)
         .withColumn('s1', F.struct(F.lit('b').alias('c1')))
@@ -241,7 +240,7 @@ def test_partial_update_set_merge(tmpdir):
         delta_table.alias('target')
         .merge(source=source.alias('source'), condition=F.expr('source.id = target.id'))
         .whenMatchedUpdate(
-            set=hydro.delta.partial_update_set(fields, 'source', 'target'),
+            set=hydro.delta.partial_update_set(delta_table, 'source', 'target'),
         )
         .whenNotMatchedInsertAll()
     ).execute()

@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 from delta import DeltaTable
+from pyspark.sql import DataFrame
 from pyspark.sql.types import DataType
 from pyspark.sql.types import StructType
 
 
 def _fields(
-    delta_table: DeltaTable,
+    df: DataFrame,
     include_types: bool,
 ) -> list[tuple[str, DataType] | str]:
     # ChatGPT 🤖 prompt:
     # write a program that takes a PySpark StructType and returns the leaf node field names, even the nested ones # noqa: E501
-    schema = delta_table.toDF().schema
+    schema = df.schema
 
     def get_leaf_fields(
         struct: StructType,
@@ -42,17 +43,17 @@ def _fields(
     return get_leaf_fields(schema, include_types)
 
 
-def fields(delta_table: DeltaTable) -> list[str]:
+def fields(df: DataFrame) -> list[str]:
     """
     :param delta_table:
     :return:
     """
-    return _fields(delta_table, False)
+    return _fields(df, False)
 
 
-def fields_with_types(delta_table: DeltaTable) -> list[tuple[str, DataType]]:
+def fields_with_types(df: DataFrame) -> list[tuple[str, DataType]]:
     """
     :param delta_table:
     :return:
     """
-    return _fields(delta_table, True)
+    return _fields(df, True)
