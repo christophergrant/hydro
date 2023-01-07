@@ -14,19 +14,21 @@ import os
 import sys
 from datetime import date
 
+from packaging.version import parse
+
 from hydro import __version__
 
-from packaging.version import parse
 
 def minor_major(version):
     v = parse(version)
-    return f"{v.major}.{v.minor}"
+    return f'{v.major}.{v.minor}'
+
 
 sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'hydro'
-copyright = f"{date.today().year} Christopher Grant"
+copyright = f'{date.today().year} Christopher Grant'
 author = 'Christopher Grant'
 
 # The full version, including alpha/beta/rc tags
@@ -37,7 +39,17 @@ release = minor_major(__version__)
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['myst_parser', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx_design']
+extensions = [
+    'myst_parser',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.viewcode',
+    'sphinx_design',
+    # "sphinxext.rediraffe",
+    'sphinxcontrib.mermaid',
+    'sphinxext.opengraph',
+    'sphinx.ext.napoleon',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -48,8 +60,11 @@ templates_path = ['_templates']
 exclude_patterns = []
 
 intersphinx_mapping = {
-    "pyspark": ("hhttps://spark.apache.org/docs/latest/api/python/reference/index.html", None),
-    "delta": ("https://docs.delta.io/latest/api/python/index.html", None),
+    'pyspark': (
+        'https://spark.apache.org/docs/latest/api/python/reference/index.html',
+        None,
+    ),
+    'delta': ('https://docs.delta.io/latest/api/python/index.html', None),
 }
 
 # -- Autodoc settings ---------------------------------------------------
@@ -57,26 +72,26 @@ intersphinx_mapping = {
 nitpicky = True
 autodoc_member_order = 'bysource'
 nitpick_ignore = [
-    ("py:class", "docutils.nodes.document"),
-    ("py:class", "docutils.nodes.docinfo"),
-    ("py:class", "docutils.nodes.Element"),
-    ("py:class", "docutils.nodes.Node"),
-    ("py:class", "docutils.nodes.field_list"),
-    ("py:class", "docutils.nodes.problematic"),
-    ("py:class", "docutils.nodes.pending"),
-    ("py:class", "docutils.nodes.system_message"),
-    ("py:class", "docutils.statemachine.StringList"),
-    ("py:class", "docutils.parsers.rst.directives.misc.Include"),
-    ("py:class", "docutils.parsers.rst.Parser"),
-    ("py:class", "docutils.utils.Reporter"),
-    ("py:class", "nodes.Element"),
-    ("py:class", "nodes.Node"),
-    ("py:class", "nodes.system_message"),
-    ("py:class", "Directive"),
-    ("py:class", "Include"),
-    ("py:class", "StringList"),
-    ("py:class", "DocutilsRenderer"),
-    ("py:class", "MockStateMachine"),
+    ('py:class', 'docutils.nodes.document'),
+    ('py:class', 'docutils.nodes.docinfo'),
+    ('py:class', 'docutils.nodes.Element'),
+    ('py:class', 'docutils.nodes.Node'),
+    ('py:class', 'docutils.nodes.field_list'),
+    ('py:class', 'docutils.nodes.problematic'),
+    ('py:class', 'docutils.nodes.pending'),
+    ('py:class', 'docutils.nodes.system_message'),
+    ('py:class', 'docutils.statemachine.StringList'),
+    ('py:class', 'docutils.parsers.rst.directives.misc.Include'),
+    ('py:class', 'docutils.parsers.rst.Parser'),
+    ('py:class', 'docutils.utils.Reporter'),
+    ('py:class', 'nodes.Element'),
+    ('py:class', 'nodes.Node'),
+    ('py:class', 'nodes.system_message'),
+    ('py:class', 'Directive'),
+    ('py:class', 'Include'),
+    ('py:class', 'StringList'),
+    ('py:class', 'DocutilsRenderer'),
+    ('py:class', 'MockStateMachine'),
 ]
 
 # -- Options for HTML output -------------------------------------------------
@@ -85,15 +100,15 @@ nitpick_ignore = [
 # a list of builtin themes.
 #
 html_theme = 'sphinx_book_theme'
-html_title = ""
+html_title = ''
 html_theme_options = {
-    "home_page_in_toc": True,
-    "github_url": "https://github.com/christophergrant/delta-hydro",
-    "repository_url": "https://github.com/christophergrant/delta-hydro",
-    "repository_branch": "main",
-    "path_to_docs": "docs/source",
-    "use_repository_button": True,
-    "use_edit_page_button": True,
+    'home_page_in_toc': True,
+    'github_url': 'https://github.com/christophergrant/delta-hydro',
+    'repository_url': 'https://github.com/christophergrant/delta-hydro',
+    'repository_branch': 'main',
+    'path_to_docs': 'docs/source',
+    'use_repository_button': True,
+    'use_edit_page_button': True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -104,4 +119,21 @@ html_static_path = ['_static']
 
 # -- Myst options -------------------------------------------------
 
-myst_enable_extensions = ["colon_fence"]
+myst_enable_extensions = [
+    'dollarmath',
+    'amsmath',
+    'deflist',
+    'fieldlist',
+    'html_admonition',
+    'html_image',
+    'colon_fence',
+    'smartquotes',
+    'replacements',
+    'linkify',
+    'strikethrough',
+    'substitution',
+    'tasklist',
+    'attrs_inline',
+]
+
+myst_enable_extensions = ['colon_fence']

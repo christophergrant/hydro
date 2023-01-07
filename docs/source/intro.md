@@ -13,11 +13,19 @@ To install use [pip](https://pip.pypa.io):
 pip install delta-hydro
 ```
 
+To start an interative shell:
+
+```bash
+pyspark --packages io.delta:delta-core_2.12:2.2.0 --conf "spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension" --conf "spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog"
+```
+
+For other methods, follow [this guide](https://docs.delta.io/latest/quick-start.html#set-up-apache-spark-with-delta-lake).
+
 ## Databricks
 
 [![PyPI][pypi-badge]][pypi-link]
 
-To install `hydro` on a Databricks cluster, follow [these directions](https://docs.databricks.com/libraries/cluster-libraries.html#install-a-library-on-a-cluster).
+To install hydro on a Databricks cluster, follow [these directions](https://docs.databricks.com/libraries/cluster-libraries.html#install-a-library-on-a-cluster).
 
 [pypi-badge]: https://img.shields.io/pypi/v/delta-hydro.svg
 [pypi-link]: https://pypi.org/project/delta-hydro/
