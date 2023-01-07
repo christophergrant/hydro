@@ -49,6 +49,7 @@ extensions = [
     'sphinxcontrib.mermaid',
     'sphinxext.opengraph',
     'sphinx.ext.napoleon',
+    'sphinx_copybutton',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -135,7 +136,7 @@ myst_enable_extensions = [
     'tasklist',
     #'attrs_inline',
 ]
-myst_number_code_blocks = ["typescript"]
+myst_number_code_blocks = ['typescript']
 myst_heading_anchors = 2
 myst_footnote_transition = True
 myst_dmath_double_inline = True

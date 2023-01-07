@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from delta import DeltaTable
 from pyspark.sql import DataFrame
 from pyspark.sql.types import DataType
 from pyspark.sql.types import StructType
