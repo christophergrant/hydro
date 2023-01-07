@@ -1,14 +1,18 @@
-# hydro
+# hydro 💧
 
 hydro is a collection of Apache Spark and Linux Foundation Delta Lake related tooling.
 
-## Install
+## Installation
 
 ```commandline
 pip install delta-hydro
 ```
 
-## Usage
+## Docs 📖
+
+https://christophergrant.github.io/delta-hydro
+
+## Top functions
 
 ### DeltaTable full schema
 
@@ -78,20 +82,14 @@ results in something like
 }
 ```
 
-## Contributions
+## Contributions ✨
 
-Contributions are welcome.
+Contributions are welcome. 
 
-## Naming
+However, please [create an issue](https://github.com/christophergrant/delta-hydro/issues/new/choose) before starting a feature to make sure that it aligns with the future of the project.
+
+## Naming 🤓
 
 Originally this project was going to be `hydrologist` but that's way too long and pretentious so we shortened to `hydro`.
 
 A hydrologist is a person who studies water and its movement. Delta Lake, Data Lake, Lakehouse => water.
-
-## Philosophy
-
-Minimalism in almost everything.
-
-Break the rules if the rules are not justified.
-
-Openness above all.
