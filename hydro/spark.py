@@ -45,7 +45,7 @@ def _fields(
 
 def fields(df: DataFrame) -> list[str]:
     """
-    :param delta_table:
+    :param df:
     :return:
     """
     return _fields(df, False)
@@ -53,7 +53,7 @@ def fields(df: DataFrame) -> list[str]:
 
 def fields_with_types(df: DataFrame) -> list[tuple[str, DataType]]:
     """
-    :param delta_table:
+    :param df:
     :return:
     """
     return _fields(df, True)

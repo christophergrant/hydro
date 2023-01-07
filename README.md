@@ -2,6 +2,8 @@
 
 hydro is a collection of Python-based [Apache Spark](https://spark.apache.org/) and [Delta Lake](https://delta.io/) related tooling.
 
+It is used by data practitioners to do common tasks like deduplication, slowly changing dimensions, and learning more about their Delta Lake tables.
+
 ## Installation
 
 ```commandline

@@ -195,8 +195,10 @@ def deduplicate(
         keys = [keys]
     detail_object = detail_enhanced(delta_table)
     target_location = detail_object['location']
-    table_version = detail_object["version"]
-    print(f"IF THIS OPERATION FAILS, RUN RESTORE TO {table_version} WITH deltaTable.restoreToVersion({table_version})")
+    table_version = detail_object['version']
+    print(
+        f'IF THIS OPERATION FAILS, RUN RESTORE TO {table_version} WITH deltaTable.restoreToVersion({table_version})',
+    )
     count_col = uuid4().hex
     df = delta_table.toDF()
     spark = df.sparkSession
