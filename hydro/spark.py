@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from pyspark.sql import DataFrame
-from pyspark.sql.types import DataType
-from pyspark.sql.types import StructType
+from pyspark.sql.types import DataType, StructType
 
 
 def _fields(
