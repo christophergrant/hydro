@@ -184,9 +184,6 @@ def deduplicate(
     :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements "weighing" more than lesser ones. The columns will be evaluated in descending order. In the event of a tie, you will get non-deterministic results.
     :return: The same Delta Lake table as **delta_table**.
     """
-    if tiebreaking_columns is None:
-        tiebreaking_columns = []
-
     if isinstance(keys, str):  # pragma: no cover
         keys = [keys]
     detail_object = detail_enhanced(delta_table)
@@ -195,33 +192,17 @@ def deduplicate(
     print(
         f'IF THIS OPERATION FAILS, RUN RESTORE TO {table_version} WITH deltaTable.restoreToVersion({table_version})',
     )
-    count_col = uuid4().hex
     df = delta_table.toDF()
     spark = df.sparkSession
-    window = Window.partitionBy(keys)
 
-    dupes = df.withColumn(count_col, F.count('*').over(window)).filter(F.col(count_col) > 1).drop(count_col)
-    if tiebreaking_columns:
-        row_number_col = uuid4().hex
-        tiebreaking_desc = [F.col(col).desc() for col in tiebreaking_columns]
-        window = window.orderBy(tiebreaking_desc)
-        deduped = (
-            dupes.withColumn(row_number_col, F.row_number().over(window))
-            .filter(F.col(row_number_col) == 1)
-            .drop(row_number_col)
-        )
-        deduped.write.format('delta').save(
-            backup_path,
-        )
-    else:
-        dupes.drop_duplicates(keys).write.format('delta').save(
-            backup_path,
-        )
+    deduped = hs.deduplicate_dataframe(df, keys=keys, tiebreaking_columns=tiebreaking_columns)
+    deduped.write.format('delta').save(backup_path)
+
     merge_key_condition = ' AND '.join(
         [f'source.{key} = target.{key}' for key in keys],
     )
     delta_table.alias('target').merge(
-        dupes.select(keys).distinct().alias('source'),
+        deduped.select(keys).distinct().alias('source'),  # do we need distinct here?
         merge_key_condition,
     ).whenMatchedDelete().execute()
     spark.read.format('delta').load(backup_path).write.format('delta').mode(

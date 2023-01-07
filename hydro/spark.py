@@ -100,12 +100,15 @@ def deduplicate_dataframe(
     if not keys:
         return df.drop_duplicates()
 
+    if df.isStreaming and tiebreaking_columns:
+        print('df is streaming, ignoring `tiebreaking_columns`')  # pragma: no cover
+
     count_col = uuid4().hex  # generate a random column name that is virtually certain to not be in the dataset
     window = Window.partitionBy(keys)
 
     dupes = df.withColumn(count_col, F.count('*').over(window)).filter(F.col(count_col) > 1).drop(count_col)
     deduped = None
-    if tiebreaking_columns:
+    if tiebreaking_columns and not df.isStreaming:
         row_number_col = uuid4().hex
         tiebreaking_desc = [F.col(col).desc() for col in tiebreaking_columns]  # potential enhancement here
         tiebreaking_window = window.orderBy(tiebreaking_desc)
