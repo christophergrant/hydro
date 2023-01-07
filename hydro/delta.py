@@ -245,8 +245,11 @@ def partial_update_set(
 ) -> F.col:
     """
     Generates an update set for a Delta Lake MERGE operation where the source data provides partial updates.
+
     Partial updates in this case are when some columns in the data are NULL, but are meant to be non-destructive, or is there no semantic meaning to the NULLs.
+
     In other words, sometimes we want to keep the original value and not overwrite it with a NULL.
+
     This is particularly helpful with CDC data.
 
     :param delta_frame: A Delta Lake table or DataFrame that describes a source dataframe

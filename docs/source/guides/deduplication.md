@@ -1,7 +1,7 @@
 ```{eval-rst}
 .. deduplicate.md:
 ```
-
+# Deduplication
 Let's say you have a Delta Lake table with the following contents and schema:
 
 | id  | type  | timestamp           |
