@@ -22,14 +22,19 @@ def scd(
     scd_type: int = 2,
 ) -> DeltaTable:
     """
+    Slowly Changing Dimensions (SCD) is a data management/engineering technique for handling changes in dimensions.
 
-    :param delta_table:
-    :param source:
-    :param keys:
-    :param effective_ts:
-    :param end_ts:
-    :param scd_type:
-    :return:
+    (Type 1)[https://en.wikipedia.org/wiki/Slowly_changing_dimension#Type_1:_overwrite] is a simple overwrite, where old data is overwritten with the new.
+
+    (Type 2)[https://en.wikipedia.org/wiki/Slowly_changing_dimension#Type_2:_add_new_row] lets you track the history of an entity, creating a new row for each change in state.
+
+    :param delta_table: The Delta Lake table that is to be updated
+    :param source: The new data that will be used to update `delta_table`
+    :param keys: Column(s) that identify unique entities
+    :param effective_ts: The start timestamp for a given row
+    :param end_ts: The end timestamp for a given row. Used for Type 2 SCD
+    :param scd_type: The type of SCD that is to be performed
+    :return: The same `delta_table`
     """
     if isinstance(keys, str):  # pragma: no cover
         keys = [keys]
@@ -41,15 +46,6 @@ def scd(
         effective_ts: str,
         end_ts: str,
     ):
-        """
-
-        :param delta_table:
-        :param source:
-        :param keys:
-        :param effective_ts:
-        :param end_ts:
-        :return:
-        """
         if not end_ts:
             raise ValueError(
                 '`end_ts` parameter not provided, type 2 scd requires this',
@@ -187,7 +183,7 @@ def deduplicate(
     :param temp_path: A temporary location used to stage de-duplicated data. The location that `temp_path` points to needs to be empty.
     :param keys: A list of column names used to distinguish rows. The order of this list does not matter.
     :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements "weighing" more than lesser ones. The columns will be evaluated in descending order. In the event of a tie, you will get non-deterministic results.
-    :return: The same Delta table as **delta_table**.
+    :return: The same Delta Lake table as **delta_table**.
     """
     if tiebreaking_columns is None:
         tiebreaking_columns = []
