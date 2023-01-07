@@ -5,8 +5,9 @@ from typing import Any
 from uuid import uuid4
 
 from delta import DeltaTable
+from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql import DataFrame, Window
+from pyspark.sql import Window
 
 import hydro.spark
 from hydro import _humanize_bytes
