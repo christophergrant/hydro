@@ -1,4 +1,4 @@
-hydro
+hydro 💧
 =================================
 
 .. toctree::
@@ -8,7 +8,7 @@ hydro
 What is hydro?
 =================================
 
-Hydro is a collection of Delta Lake and Apache Spark related tools.
+Hydro is a collection of Delta Lake and Apache Spark related tools that lessens the burden of being a data practitioner.
 
 Installation
 =================================

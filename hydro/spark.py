@@ -45,15 +45,25 @@ def _fields(
 
 def fields(df: DataFrame) -> list[str]:
     """
-    :param df:
-    :return:
+
+    Returns names of all of the fields of a DataFrame, including nested ones.
+
+    This contrasts with StructType.fields as it gives fully qualified names for nested fields.
+
+    :param df: DataFrame that you want to extract all fields from
+    :return: A list of column names, all strings
     """
     return _fields(df, False)
 
 
 def fields_with_types(df: DataFrame) -> list[tuple[str, DataType]]:
     """
-    :param df:
-    :return:
+
+    See docs for `fields`.
+
+    Like fields, but returns DataType along with field names as a tuple.
+
+    :param df: DataFrame that you want to extract all fields and types from
+    :return: A list of tuples, (column_name, type)
     """
     return _fields(df, True)
