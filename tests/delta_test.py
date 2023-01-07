@@ -148,6 +148,15 @@ def test_partial_update_set_merge(tmpdir):
     assert presented == expected
 
 
+def test_partial_update_set_deltatable(tmpdir):
+    path = f'{tmpdir}/{inspect.stack()[0][3]}'
+    spark.range(1).write.format('delta').save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+    update_set = hd.partial_update_set(delta_table, source_alias='source', target_alias='target')
+    # you can't equate Columns from pyspark, so we implicitly(?) convert to string and do equality there instead
+    assert str(update_set['id']) == str(F.coalesce(F.col('source.id'), F.col('target.id')))
+
+
 def test_scd_type2(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
     target_data = [

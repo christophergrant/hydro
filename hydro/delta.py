@@ -213,8 +213,8 @@ def deduplicate(
 
 def partial_update_set(
     delta_frame: DataFrame | DeltaTable,
-    source_alias: str,
-    target_alias: str,
+    source_alias: str = 'source',
+    target_alias: str = 'target',
 ) -> F.col:
     """
     Generates an update set for a Delta Lake MERGE operation where the source data provides partial updates.
@@ -230,6 +230,7 @@ def partial_update_set(
     :param target_alias: A temporary name given to the target Delta Table of the MERGE
     :return: A dictionary that describes non-destructive updates for all fields in `delta_frame`
     """
+    # why does cov lie?
     if isinstance(delta_frame, DeltaTable):  # pragma: no cover
         delta_frame = delta_frame.toDF()
     fields = hs.fields(delta_frame)
