@@ -13,3 +13,4 @@ jobs:
         run: |
           sphinx-build -n -T -b html docs/source/ _site
       - uses: actions/upload-pages-artifact@main
+      - uses: actions/deploy-pages@v1
