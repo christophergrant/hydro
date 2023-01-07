@@ -1,6 +1,7 @@
 # hydro 💧
 
 [![main](https://github.com/christophergrant/delta-hydro/actions/workflows/main.yml/badge.svg)](https://github.com/christophergrant/delta-hydro/actions/workflows/main.yml)
+[![codecov](https://codecov.io/gh/christophergrant/delta-hydro/branch/main/graph/badge.svg?token=Z64814CV1E)](https://codecov.io/gh/christophergrant/delta-hydro)
 
 hydro is a collection of Python-based [Apache Spark](https://spark.apache.org/) and [Delta Lake](https://delta.io/) tooling.
 

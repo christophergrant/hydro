@@ -2,58 +2,15 @@ from __future__ import annotations
 
 import inspect
 from pprint import pprint
-from typing import Any
 from uuid import uuid4
 
-import pyspark.sql.functions as F
 import pytest
-from delta import configure_spark_with_delta_pip
 from delta import DeltaTable
-from pyspark.sql import DataFrame
-from pyspark.sql import SparkSession
-from pyspark.sql.types import *
+from pyspark.sql import functions as F
 
-import hydro.delta
-import hydro.spark
-
-builder = (
-    SparkSession.builder.appName('hydro-unit-tests')
-    .master('local[*]')
-    .config('spark.sql.shuffle.partitions', 1)
-    .config('spark.default.parallelism', 1)
-    .config('spark.rdd.compress', False)
-    .config('spark.shuffle.compress', False)
-    .config('spark.shuffle.spill.compress', False)
-    .config('spark.dynamicAllocation.enabled', False)
-    .config('spark.serializer', 'org.apache.spark.serializer.KryoSerializer')
-    .config('spark.sql.extensions', 'io.delta.sql.DeltaSparkSessionExtension')
-    .config(
-        'spark.sql.catalog.spark_catalog',
-        'org.apache.spark.sql.delta.catalog.DeltaCatalog',
-    )
-)
-
-spark = configure_spark_with_delta_pip(builder).getOrCreate()
-
-
-def _df_to_list_of_dict(df: DataFrame | DeltaTable) -> list[dict[Any, Any]]:
-    if isinstance(df, DeltaTable):
-        df = df.toDF()
-    if df.count() > 10:
-        raise OverflowError(
-            'DataFrame over 10 rows, not materializing. Was this an accident?',
-        )
-    return [row.asDict(recursive=True) for row in df.collect()]
-
-
-def test_df_to_dict_exception():
-    df = spark.range(11)
-    with pytest.raises(OverflowError) as exception:
-        _df_to_list_of_dict(df)
-    assert (
-        exception.value.args[0] ==
-        'DataFrame over 10 rows, not materializing. Was this an accident?'
-    )
+import hydro.delta as hd
+from tests import _df_to_list_of_dict
+from tests import spark
 
 
 def test_snapshot_allfiles_basic(tmpdir):
@@ -63,14 +20,14 @@ def test_snapshot_allfiles_basic(tmpdir):
         spark,
         path,
     )  # didn't catch when i didn't pass spark as first param
-    assert hydro.delta._snapshot_allfiles(delta_table).count() == 1
+    assert hd._snapshot_allfiles(delta_table).count() == 1
 
 
 def test_detail_basic(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
     spark.range(10000).repartition(1000).write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
-    humanized_details = hydro.delta.detail(delta_table)
+    humanized_details = hd.detail(delta_table)
     raw_details = humanized_details
     assert raw_details['num_files'] == '1,000' and raw_details['size'].endswith(
         'KiB',
@@ -82,7 +39,7 @@ def test_get_table_zordering_onecol(tmpdir):
     spark.range(10).write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
     delta_table.optimize().executeZOrderBy('id')
-    presented = hydro.delta.get_table_zordering(delta_table).collect()[0].asDict()
+    presented = hd.get_table_zordering(delta_table).collect()[0].asDict()
     expected = {'zOrderBy': '["id"]', 'count': 1}
     assert presented == expected
 
@@ -98,68 +55,12 @@ def test_get_table_zordering_twocol(tmpdir):
         'delta',
     ).save(path)
     delta_table.optimize().executeZOrderBy('id', 'id2')
-    presented = _df_to_list_of_dict(hydro.delta.get_table_zordering(delta_table))
+    presented = _df_to_list_of_dict(hd.get_table_zordering(delta_table))
     expected = [
         {'zOrderBy': '["id","id2"]', 'count': 1},
         {'zOrderBy': '["id"]', 'count': 1},
     ]
     assert presented == expected
-
-
-def test_fields_nested_basic(tmpdir):
-    path = f'{tmpdir}/{inspect.stack()[0][3]}'
-    spark.range(1).withColumn('s1', F.struct(F.lit('a').alias('c1'))).write.format(
-        'delta',
-    ).save(
-        path,
-    )
-    delta_table = DeltaTable.forPath(spark, path)
-    provided = hydro.spark.fields(delta_table.toDF())
-    expected = ['id', 's1.c1']
-    assert provided == expected
-
-
-def test_fields_nested_array(tmpdir):
-    path = f'{tmpdir}/{inspect.stack()[0][3]}'
-    spark.range(1).withColumn(
-        's1',
-        F.struct(F.array(F.lit('data')).alias('a')),
-    ).write.format('delta').save(path)
-    delta_table = DeltaTable.forPath(spark, path)
-    provided = hydro.spark.fields_with_types(delta_table.toDF())
-    expected = [('id', LongType()), ('s1.a', ArrayType(StringType(), True))]
-    assert provided == expected
-
-
-def test_fields_docs_example(tmpdir):
-    path = f'{tmpdir}/{inspect.stack()[0][3]}'
-    data = """
-    {
-       "isbn":"0-942299-79-5",
-       "title":"The Society of the Spectacle",
-       "author":{
-          "first_name":"Guy",
-          "last_name":"Debord"
-       },
-       "published_year":1967,
-       "pages":154,
-       "language":"French"
-    }
-    """
-    rdd = spark.sparkContext.parallelize([data])
-    spark.read.json(rdd).write.format('delta').save(path)
-    delta_table = DeltaTable.forPath(spark, path)
-    better_fieldnames = hydro.spark.fields(delta_table.toDF())
-    expected = [
-        'author.first_name',
-        'author.last_name',
-        'isbn',
-        'language',
-        'pages',
-        'published_year',
-        'title',
-    ]
-    assert sorted(better_fieldnames) == sorted(expected)
 
 
 @pytest.mark.timeout(10)  # this should not take longer than 5 seconds
@@ -168,7 +69,7 @@ def test_detail_enhanced(tmpdir):
     spark.range(1).write.format('delta').save(path)
 
     delta_table = DeltaTable.forPath(spark, path)
-    enhanced_details = hydro.delta.detail_enhanced(delta_table)
+    enhanced_details = hd.detail_enhanced(delta_table)
     pprint(enhanced_details)
     assert enhanced_details['numRecords'] == '1.0'
 
@@ -180,7 +81,7 @@ def test_partition_stats(tmpdir):
     ).format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
 
-    presented = _df_to_list_of_dict(hydro.delta.partition_stats(delta_table))
+    presented = _df_to_list_of_dict(hd.partition_stats(delta_table))
     expected = [
         {
             'part': '0',
@@ -240,7 +141,7 @@ def test_partial_update_set_merge(tmpdir):
         delta_table.alias('target')
         .merge(source=source.alias('source'), condition=F.expr('source.id = target.id'))
         .whenMatchedUpdate(
-            set=hydro.delta.partial_update_set(delta_table, 'source', 'target'),
+            set=hd.partial_update_set(delta_table, 'source', 'target'),
         )
         .whenNotMatchedInsertAll()
     ).execute()
@@ -265,7 +166,7 @@ def test_scd_type2(tmpdir):
     ]
     df = spark.createDataFrame(source_data)
     presented = _df_to_list_of_dict(
-        hydro.delta.scd(delta_table, df, 'id', 'ts', 'end_ts'),
+        hd.scd(delta_table, df, 'id', 'ts', 'end_ts'),
     )
     expected = [
         {
@@ -300,7 +201,7 @@ def test_scd_type1(tmpdir):
     ]
     df = spark.createDataFrame(source_data)
     presented = _df_to_list_of_dict(
-        hydro.delta.scd(delta_table, df, 'id', 'ts', scd_type=1),
+        hd.scd(delta_table, df, 'id', 'ts', scd_type=1),
     )
     expected = [
         {
@@ -319,7 +220,7 @@ def test_bootstrap_scd2_path(tmpdir):
         {'id': 1, 'location': 'Northern California', 'ts': '2019-11-01 00:00:00'},
     ]
     df = spark.createDataFrame(target_data)
-    delta_table = hydro.delta.bootstrap_scd2(df, 'id', 'ts', 'end_ts', path=path)
+    delta_table = hd.bootstrap_scd2(df, 'id', 'ts', 'end_ts', path=path)
     presented = _df_to_list_of_dict(delta_table)
     expected = [
         {
@@ -348,7 +249,7 @@ def test_bootstrap_scd2_tableidentifier(tmpdir):
         {'id': 1, 'location': 'Northern California', 'ts': '2019-11-01 00:00:00'},
     ]
     df = spark.createDataFrame(target_data)
-    delta_table = hydro.delta.bootstrap_scd2(
+    delta_table = hd.bootstrap_scd2(
         df,
         'id',
         'ts',
@@ -380,7 +281,7 @@ def test_bootstrap_scd2_tableidentifier(tmpdir):
 def test_bootstrap_scd2_nopath_notable():
     df = spark.range(10)
     with pytest.raises(ValueError) as exception:
-        hydro.delta.bootstrap_scd2(df, ['id'], 'ts', 'end_ts')
+        hd.bootstrap_scd2(df, ['id'], 'ts', 'end_ts')
     assert (
         exception.value.args[0] ==
         'Need to specify one (or both) of `path` and `table_identifier`'
@@ -393,7 +294,7 @@ def test__scd2_no_endts(tmpdir):
     df.write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
     with pytest.raises(ValueError) as exception:
-        hydro.delta.scd(delta_table, df, ['id'], 'ts')
+        hd.scd(delta_table, df, ['id'], 'ts')
     assert (
         exception.value.args[0] ==
         '`end_ts` parameter not provided, type 2 scd requires this'
@@ -406,7 +307,7 @@ def test_scd_invalid_type(tmpdir):
     df.write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
     with pytest.raises(ValueError) as exception:
-        hydro.delta.scd(delta_table, df, ['id'], 'ts', 'end_ts', scd_type=69)
+        hd.scd(delta_table, df, ['id'], 'ts', 'end_ts', scd_type=69)
     assert exception.value.args[0] == '`scd_type` not of (1,2)'
 
 
@@ -420,7 +321,7 @@ def test_deduplicate(tmpdir):
     df = spark.createDataFrame(data)
     df.write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
-    result = hydro.delta.deduplicate(delta_table, staging_path, 'id')
+    result = hd.deduplicate(delta_table, staging_path, 'id')
     expected = [{'id': 1, 'ts': 1}]
     assert sorted(_df_to_list_of_dict(result), key=lambda x: x['id']) == sorted(
         expected,
@@ -438,7 +339,7 @@ def test_deduplicate_tiebreaking(tmpdir):
     df = spark.createDataFrame(data)
     df.write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
-    result = hydro.delta.deduplicate(
+    result = hd.deduplicate(
         delta_table,
         staging_path,
         'id',

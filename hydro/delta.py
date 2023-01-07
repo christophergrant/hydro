@@ -9,7 +9,7 @@ from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql import Window
 
-import hydro.spark
+import hydro.spark as hs
 from hydro import _humanize_bytes
 from hydro import _humanize_number
 
@@ -259,7 +259,7 @@ def partial_update_set(
     """
     if isinstance(delta_frame, DeltaTable):  # pragma: no cover
         delta_frame = delta_frame.toDF()
-    fields = hydro.spark.fields(delta_frame)
+    fields = hs.fields(delta_frame)
     return {
         field: F.coalesce(f'{source_alias}.{field}', f'{target_alias}.{field}')
         for field in fields
