@@ -110,7 +110,6 @@ def deduplicate_dataframe(
     window = Window.partitionBy(keys)
 
     dupes = df.withColumn(count_col, F.count('*').over(window)).filter(F.col(count_col) > 1).drop(count_col)
-    deduped = None
     if tiebreaking_columns and not df.isStreaming:
         row_number_col = uuid4().hex
         tiebreaking_desc = [F.col(col).desc() for col in tiebreaking_columns]  # potential enhancement here
@@ -128,11 +127,13 @@ def deduplicate_dataframe(
 def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str = 'md5', num_bits=256) -> Column:
     """
 
-    :param df:
-    :param denylist_fields:
-    :param algorithm:
-    :param num_bits:
-    :return:
+    Generates a hash digest of all fields.
+
+    :param df: Input dataframe that is to be hashed.
+    :param denylist_fields: Fields that will not be hashed.
+    :param algorithm: The function that is used to generate the hash digest. Includes sha1, sha2, and md5.
+    :param num_bits: For SHA2 only. The number of output bits.
+    :return: A column that represents the hash.
     """
     supported_algorithms = ['sha1', 'sha2', 'md5']
 
@@ -158,9 +159,11 @@ def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str
 def hash_schema(df: DataFrame, denylist_fields: list[str] = None) -> Column:
     """
 
-    :param df:
-    :param denylist_fields:
-    :return:
+    Generates a hash digest of a DataFrame's schema. Uses the hashlib.md5 algorithm.
+
+    :param df: Input dataframe whose schema is to be hashed.
+    :param denylist_fields: Fields that will not be hashed.
+    :return: A column that represents the hash.
     """
 
     all_fields = fields(df)
@@ -168,7 +171,6 @@ def hash_schema(df: DataFrame, denylist_fields: list[str] = None) -> Column:
         all_fields = list(set(all_fields) - set(denylist_fields))
 
     fields_set = set(all_fields)
-    print(len(all_fields), len(fields_set))
     if len(all_fields) != len(fields_set):
         dupes = [item for item, count in collections.Counter(all_fields).items() if count > 1]
         raise ValueError(f'Duplicate field(s) detected in df, {dupes}')
@@ -180,3 +182,11 @@ def hash_schema(df: DataFrame, denylist_fields: list[str] = None) -> Column:
     schema_hash = hashlib.md5(''.join(sorted(all_fields)).encode('utf-8')).hexdigest()
     hash_col = F.lit(schema_hash)  # amalgamate list as string bc list is un-hashable
     return hash_col
+
+
+def map_fields_by_regex():
+    pass
+
+
+def map_fields_by_type():
+    pass
