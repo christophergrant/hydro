@@ -12,4 +12,4 @@ jobs:
       - name: Sphinx build
         run: |
           sphinx-build -n -T -b html docs/source/ _build
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@main
