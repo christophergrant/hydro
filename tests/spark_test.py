@@ -9,6 +9,7 @@ from pyspark.sql.types import LongType
 from pyspark.sql.types import StringType
 
 import hydro.spark as hs
+from tests import _df_to_list_of_dict
 from tests import spark
 
 
@@ -63,3 +64,30 @@ def test_fields_docs_example(tmpdir):
         'title',
     ]
     assert sorted(better_fieldnames) == sorted(expected)
+
+
+def test_deduplicate_dataframe_keys_notiebreak():
+    df = spark.range(1).union(spark.range(1))
+    result = hs.deduplicate_dataframe(df, keys=['id'])
+    assert _df_to_list_of_dict(result) == [{'id': 0}]
+
+
+def test_deduplicate_dataframe_nokeys():
+    data = [{'id': 0, 'ts': 1}, {'id': 0, 'ts': 1}]
+    df = spark.createDataFrame(data)
+    result = hs.deduplicate_dataframe(df)
+    assert _df_to_list_of_dict(result) == [{'id': 0, 'ts': 1}]
+
+
+def test_deduplicate_dataframe_negative_nokeys():
+    data = [{'id': 0, 'ts': 1}, {'id': 0, 'ts': 2}]
+    df = spark.createDataFrame(data)
+    result = hs.deduplicate_dataframe(df)
+    assert _df_to_list_of_dict(result) == [{'id': 0, 'ts': 1}, {'id': 0, 'ts': 2}]
+
+
+def test_deduplicate_dataframe_tiebreaker():
+    data = [{'id': 0, 'ts': 1}, {'id': 0, 'ts': 2}]
+    df = spark.createDataFrame(data)
+    result = hs.deduplicate_dataframe(df, keys=['id'], tiebreaking_columns=['ts'])
+    assert _df_to_list_of_dict(result) == [{'id': 0, 'ts': 2}]
