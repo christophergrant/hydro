@@ -178,7 +178,9 @@ def deduplicate(
     tiebreaking_columns: list[str] = None,
 ) -> DeltaTable:
     """
-    Removes duplicates from an existing Delta Lake table.
+    Removes duplicates from an existing Delta Lake table. This is a destructive operation that occurs over multiple transactions.
+
+    Be careful.
 
     :param delta_table: The target Delta Lake table that contains duplicates.
     :param temp_path: A temporary location used to stage de-duplicated data. The location that `temp_path` points to needs to be empty.
@@ -191,8 +193,10 @@ def deduplicate(
 
     if isinstance(keys, str):  # pragma: no cover
         keys = [keys]
-    detail_object = detail(delta_table)
+    detail_object = detail_enhanced(delta_table)
     target_location = detail_object['location']
+    table_version = detail_object["version"]
+    print(f"IF THIS OPERATION FAILS, RUN RESTORE TO {table_version} WITH deltaTable.restoreToVersion({table_version})")
     count_col = uuid4().hex
     df = delta_table.toDF()
     spark = df.sparkSession
@@ -260,8 +264,18 @@ def partial_update_set(
 def partition_stats(delta_table: DeltaTable) -> DataFrame:
     """
 
-    :param delta_table:
-    :return:
+    This is a utility function that gives detailed information about the partitions of a Delta Lake table.
+
+    It returns a DataFrame that gives per-partition statistics of:
+     - total size in bytes
+     - byte size quantiles (0, .25, .5, .75, 1.0)
+     - total number of records
+     - total number of files
+
+    It does this via scanning the table's transaction log, so it is fast, cheap, and scalable.
+
+    :param delta_table: A Delta Lake table that you would like to analyze
+    :return: A DataFrame that describes the size of all partitions in the table
     """
     allfiles = _snapshot_allfiles(delta_table)
     detail = DetailOutput(delta_table)
@@ -277,8 +291,16 @@ def partition_stats(delta_table: DeltaTable) -> DataFrame:
 def get_table_zordering(delta_table: DeltaTable) -> DataFrame:
     """
 
-    :param delta_table:
-    :return:
+    A Delta Lake table can be clustered (Z-Ordered) by different, multiple columns.
+
+    It is good to know what a table is clustered by to improve query performance.
+
+    This function analyzes the Delta Lake table and returns a DataFrame that describes the Z-Ordering that has been applied to the table.
+
+    The resulting DataFrame has schema of `zOrderBy`, `count`.
+
+    :param delta_table: A Delta Lake table that you would like to analyze
+    :return: A DataFrame with schema `zOrderBy`, `count`.
     """
     return (
         delta_table.history()
@@ -293,8 +315,16 @@ def get_table_zordering(delta_table: DeltaTable) -> DataFrame:
 def detail(delta_table: DeltaTable) -> dict[Any, Any]:
     """
 
-    :param delta_table:
-    :return:
+    Delta Lake tables give details like name, number of files, size, etc.
+
+    These stats are good, but ultimately they are built for machines, not humans, especially when they scale.
+
+    I mean who wants to translate `413241234191 bytes` to `384.9 GiB`? Not me. Not you.
+
+    This function returns a human-friendly version of DeltaTable.describe().
+
+    :param delta_table: A Delta Lake table that you would like to analyze
+    :return: A dictionary representing details of a Delta Lake table
     """
     detail_output = DetailOutput(delta_table)
     detail_output.humanize()
@@ -304,8 +334,14 @@ def detail(delta_table: DeltaTable) -> dict[Any, Any]:
 def detail_enhanced(delta_table: DeltaTable) -> dict[Any, Any]:
     """
 
-    :param delta_table:
-    :return:
+    See docs for `detail`. This function is similar, but adds more stats to the output including:
+    - number of records in the current snapshot
+    - percentage of files with collected statistics in the current snapshot
+    - number of partitions in the current snapshot
+    - current version
+
+    :param delta_table: A Delta Lake table that you would like to analyze
+    :return: A dictionary representing enhanced details of a Delta Lake table
     """
     details = detail(delta_table)
     allfiles = _snapshot_allfiles(delta_table)
