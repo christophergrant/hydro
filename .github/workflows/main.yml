@@ -3,6 +3,7 @@ name: main
 on:
   push:
     branches: [main, test-me-*]
+    paths-ignore: ["README.md", "docs/**"]
     tags:
   pull_request:
 
