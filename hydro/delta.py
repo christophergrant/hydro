@@ -183,7 +183,7 @@ def deduplicate(
     Removes duplicates from an existing Delta Lake table.
 
     :param delta_table: The target Delta table that contains duplicates.
-    :param temp_path: A temporary location
+    :param temp_path: A temporary location used to stage de-duplicated data. This location needs to be empty.
     :param keys: A list of column names used to distinguish rows. The order of this list does not matter.
     :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements weighing more than lesser ones.
     :return: The same Delta table as **delta_table**
@@ -328,6 +328,15 @@ def detail_enhanced(delta_table: DeltaTable) -> dict[Any, Any]:
 
     partition_count = allfiles.select(*partition_columns).distinct().count()
     details['partition_count'] = _humanize_number(partition_count)
+
+    version = (
+        delta_table.history()
+        .select('version')
+        .limit(1)
+        .collect()[0]
+        .asDict()['version']
+    )
+    details['version'] = _humanize_number(version)
     return details
 
 

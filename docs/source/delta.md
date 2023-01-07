@@ -59,11 +59,13 @@ And our resulting table looks like:
 |---------|-----------|-----------|---------------------|
 | 1       | 1         | newdata   | 2023-01-01 01:00:01 |
 
-Please note that `deduplicate` occurs over multiple transactions. Failures can happen due to many reasons.
+**WARNING**
 
-In the event of failure, we recommend running `RESTORE` on the Delta table to its previous version and try again.
+Please note that `deduplicate` occurs over multiple transactions.
 
-If Delta Lake ever provides a way to disambiguate between rows without relying on the data (e.g rowid), this could be a single transaction and thus, safer.
+If the `deduplicate` operation fails mid-way, you may need to intervene. In the event of failure, we recommend running `RESTORE` on the Delta table to its previous version and try again.
+
+If Delta Lake ever provides a way to disambiguate between rows without relying on the data (e.g an internal rowid), this could be a single transaction and thus, safer.
 
 
 ```{eval-rst}

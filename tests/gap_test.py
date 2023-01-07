@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from pprint import pprint
 from typing import Any
 from uuid import uuid4
 
@@ -167,6 +168,7 @@ def test_detail_enhanced(tmpdir):
 
     delta_table = DeltaTable.forPath(spark, path)
     enhanced_details = hydro.delta.detail_enhanced(delta_table)
+    pprint(enhanced_details)
     assert enhanced_details['numRecords'] == '1.0'
 
 
