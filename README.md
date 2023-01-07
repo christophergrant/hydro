@@ -2,7 +2,7 @@
 
 hydro is a collection of Python-based [Apache Spark](https://spark.apache.org/) and [Delta Lake](https://delta.io/) related tooling.
 
-See [Key Functionality](#key-functionality-🔑) for concrete use cases.
+See [Key Functionality](#key-functionality-) for concrete use cases.
 
 ## Installation
 
