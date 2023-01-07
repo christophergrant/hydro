@@ -11,6 +11,7 @@ jobs:
           pip install pytest
           pip install pytest-cov
           pip install covdefaults
+          pip install delta-spark
           pytest --cov=./ --cov-report=xml
       - uses: codecov/codecov-action@v3
         with:
