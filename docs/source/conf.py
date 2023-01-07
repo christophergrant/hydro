@@ -61,10 +61,10 @@ exclude_patterns = []
 
 intersphinx_mapping = {
     'pyspark': (
-        'https://spark.apache.org/docs/latest/api/python/reference/index.html',
+        'https://spark.apache.org/docs/latest/api/python/',
         None,
     ),
-    'delta': ('https://docs.delta.io/latest/api/python/index.html', None),
+    'delta': ('https://docs.delta.io/latest/api/python/', None),
 }
 
 # -- Autodoc settings ---------------------------------------------------
@@ -133,7 +133,9 @@ myst_enable_extensions = [
     'strikethrough',
     'substitution',
     'tasklist',
-    'attrs_inline',
+    #'attrs_inline',
 ]
-
-myst_enable_extensions = ['colon_fence']
+myst_number_code_blocks = ["typescript"]
+myst_heading_anchors = 2
+myst_footnote_transition = True
+myst_dmath_double_inline = True

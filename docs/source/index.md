@@ -22,7 +22,7 @@ A Python-based toolkit for making data engineering with Delta Lake easier, more 
 
 :::{grid-item-card} {octicon}`git-pull-request-closed;1.5em;sd-mr-1` Deduplication
 :link: guides/deduplication
-:link-type: ref
+:link-type: doc
 
 Hydro extends the functionality of Delta Lake to support in-place deletions without doing full overwrites.
 +++
@@ -30,17 +30,17 @@ Hydro extends the functionality of Delta Lake to support in-place deletions with
 :::
 
 :::{grid-item-card} {octicon}`fold;1.5em;sd-mr-1` SCDs
-:link: deduplication
-:link-type: ref
+:link: guides/scd
+:link-type: doc
 
 Use hydro to implement powerful data engineering patterns like Slowly Changing Dimensions.
 
 +++
-[Learn more »](guides/scd)
+[Learn more »](guides/scd.md)
 :::
 
-:::{grid-item-card} {octicon}`light-bulb;1.5em;sd-mr-1` Diagnostics
-:link: guides/scd
+:::{grid-item-card} {octicon}`light-bulb;1.5em;sd-mr-1` Table Insights
+:link: guides/insights
 :link-type: doc
 
 Hydro grants deep insight into the physical structure of Delta Lake tables using blazingly fast techniques.
@@ -52,6 +52,13 @@ Hydro grants deep insight into the physical structure of Delta Lake tables using
 ::::
 
 ---
+
+```{rubric} API reference
+```
+[hydro.delta](api/delta.md)
+
+[hydro.spark](api/spark.md)
+
 
 ```{rubric} Additional resources
 ```
