@@ -120,3 +120,26 @@ def deduplicate_dataframe(
     else:
         deduped = dupes.drop_duplicates(keys)
     return deduped
+
+
+def hash_field(df: DataFrame, column_name: str, denylist_fields: list[str] = None, algorithm: str = 'md5', num_bits=256):
+    supported_algorithms = ['sha1', 'sha2', 'md5']
+
+    if algorithm not in supported_algorithms:
+        raise ValueError(f'Algorithm {algorithm} not in supported algorithms {supported_algorithms}')
+
+    all_fields = fields(df)
+    if column_name in all_fields:
+        raise ValueError(f'{column_name} already exists in dataframe')
+
+    if denylist_fields:
+        all_fields = list(set(all_fields) - set(denylist_fields))
+
+    if algorithm == 'sha1':
+        hash_col = F.sha1(F.concat_ws('', *all_fields))
+    elif algorithm == 'sha2':
+        hash_col = F.sha2(F.concat_ws('', *all_fields), num_bits)
+    else:
+        hash_col = F.md5(F.concat_ws('', *all_fields))
+
+    return df.withColumn(column_name, hash_col)
