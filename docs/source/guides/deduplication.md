@@ -2,6 +2,19 @@
 .. deduplicate.md:
 ```
 # Deduplication
+
+Duplicate data is a common issue in data pipelines that can arise from a variety of sources, such as human error, system glitches, or data migration from legacy systems. Regardless of the cause, duplicate data can have significant negative impacts, including decreased data quality, wasted storage space, and decreased efficiency. Duplicates harm the accuracy, consistency, and reliability of a data asset.
+You have a data pipeline that writes to a Delta Lake table, and all of a sudden you start detecting that there are duplicates in your table.
+
+This article has a couple of sections: 
+- In-memory deduplication: strategies for making sure that you don't receive duplicates at all
+- On-disk deduplication: or - what to do when you already have duplicates in your Delta Lake table
+
+## On-disk deduplication
+
+
+
+
 Let's say you have a Delta Lake table with the following contents and schema:
 
 | id  | type  | timestamp           |
