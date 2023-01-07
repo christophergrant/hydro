@@ -1,6 +1,8 @@
 *.egg-info
 *.pyc
 /.coverage
+/.coverage*
+coverage.xml
 /.tox
 */spark-warehouse
 /build
