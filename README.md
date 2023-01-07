@@ -1,6 +1,6 @@
 # hydro 💧
 
-hydro is a collection of Apache Spark and Linux Foundation Delta Lake related tooling.
+hydro is a collection of Python-based [Apache Spark](https://spark.apache.org/) and [Delta Lake](https://delta.io/) related tooling.
 
 ## Installation
 
