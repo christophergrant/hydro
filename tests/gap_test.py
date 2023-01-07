@@ -162,6 +162,7 @@ def test_fields_docs_example(tmpdir):
     assert sorted(better_fieldnames) == sorted(expected)
 
 
+@pytest.mark.timeout(10)  # this should not take longer than 5 seconds
 def test_detail_enhanced(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
     spark.range(1).write.format('delta').save(path)
