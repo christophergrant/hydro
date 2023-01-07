@@ -129,3 +129,25 @@ def test_field_hash_denylist():
     final = df.withColumn('brown', column)
 
     assert _df_to_list_of_dict(final) == [{'id': 0, 'drop_this': 1, 'brown': 'cfcd208495d565ef66e7dff9f98764da'}]
+
+
+def test_schema_hash():
+    df = spark.range(1)
+    column = hs.hash_schema(df)
+    final = df.withColumn('schema_hash', column)
+    assert _df_to_list_of_dict(final) == [{'id': 0, 'schema_hash': 'b80bb7740288fda1f201890375a60c8f'}]
+
+
+def test_schema_hash_denylist():
+    df = spark.range(1).withColumn('nonsense', F.lit('nonsense'))
+    column = hs.hash_schema(df, denylist_fields=['nonsense'])
+    final = df.withColumn('schema_hash', column)
+    assert _df_to_list_of_dict(final) == [{'id': 0, 'nonsense': 'nonsense', 'schema_hash': 'b80bb7740288fda1f201890375a60c8f'}]
+
+
+def test_schema_hash_duplicate_column():
+    df = spark.range(1).withColumn('nonsense', F.lit('nonsense'))
+    joined_df = df.join(df, ['id'])
+    with pytest.raises(ValueError) as exception:
+        hs.hash_schema(joined_df)
+    assert exception.value.args[0] == """Duplicate field(s) detected in df, ['nonsense']"""

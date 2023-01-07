@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import collections
+import hashlib
 from uuid import uuid4
 
 import pyspark.sql.functions as F
@@ -142,6 +144,7 @@ def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str
     if denylist_fields:
         all_fields = list(set(all_fields) - set(denylist_fields))
 
+    all_fields.sort()
     if algorithm == 'sha1':
         hash_col = F.sha1(F.concat_ws('', *all_fields))
     elif algorithm == 'sha2':
@@ -149,4 +152,31 @@ def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str
     else:
         hash_col = F.md5(F.concat_ws('', *all_fields))
 
+    return hash_col
+
+
+def hash_schema(df: DataFrame, denylist_fields: list[str] = None) -> Column:
+    """
+
+    :param df:
+    :param denylist_fields:
+    :return:
+    """
+
+    all_fields = fields(df)
+    if denylist_fields:
+        all_fields = list(set(all_fields) - set(denylist_fields))
+
+    fields_set = set(all_fields)
+    print(len(all_fields), len(fields_set))
+    if len(all_fields) != len(fields_set):
+        dupes = [item for item, count in collections.Counter(all_fields).items() if count > 1]
+        raise ValueError(f'Duplicate field(s) detected in df, {dupes}')
+
+    """
+    ChatGPT 🤖 prompt:
+     python's hash function seems to not be deterministic across sessions. give me a python program that gives the md5 hash of a string (python 3)
+    """
+    schema_hash = hashlib.md5(''.join(sorted(all_fields)).encode('utf-8')).hexdigest()
+    hash_col = F.lit(schema_hash)  # amalgamate list as string bc list is un-hashable
     return hash_col
