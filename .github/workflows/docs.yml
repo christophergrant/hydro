@@ -4,12 +4,12 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-python@v2
       - name: Install dependencies
         run: |
           pip install sphinx furo myst-parser delta-spark
       - name: Sphinx build
         run: |
-          sphinx-build -n -T -b html docs/source/ _build
-      - uses: actions/upload-pages-artifact
+          sphinx-build -n -T -b html docs/source/ _site
+      - uses: actions/upload-pages-artifact@main
