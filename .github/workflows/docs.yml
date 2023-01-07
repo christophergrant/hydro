@@ -11,5 +11,5 @@ jobs:
           pip install sphinx furo myst-parser delta-spark
       - name: Sphinx build
         run: |
-          sphinx-build -n -T -b html docs/source/ _build
+          sphinx-build -n -T -b html docs/source/ _site
       - uses: actions/upload-pages-artifact@main
