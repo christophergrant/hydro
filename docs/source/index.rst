@@ -24,8 +24,6 @@ Delta Lake
 .. toctree::
    delta.md
 
-.. note::
-    asdf
 Spark
 =================================
 

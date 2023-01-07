@@ -121,17 +121,18 @@ def bootstrap_scd2(
     table_identifier: str = None,
 ) -> DeltaTable:
     """
+    Creates an SCD2-ready Delta Lake table.
 
-    :param source_df:
-    :param keys:
-    :param effective_ts:
-    :param end_ts:
-    :param table_properties:
-    :param partition_columns:
-    :param comment:
-    :param path:
-    :param table_identifier:
-    :return:
+    :param source_df: Source data that will populate the final Delta Lake table
+    :param keys: Column name(s) that identify unique rows. Can be a single column name as a string, or a list of strings, where order of the list does not matter.
+    :param effective_ts: The name of the existing column that will be used as the "start" or "effective" timestamp for a given entity.
+    :param end_ts: The name of the non-existing column that will be used as the "end" timestamp for a given entity.
+    :param table_properties: A set of [Delta Lake table properties](https://docs.delta.io/latest/table-properties.html). Can also be custom properties.
+    :param partition_columns: A set of column names that will be used for on-disk partitioning.
+    :param comment: Comment that describes the table.
+    :param path: Specify the path to the directory where table data is stored, which could be a path on distributed storage.
+    :param table_identifier: The table name. Optionally qualified with a database name [catalog_name.] [database_name.] table_name.
+    :return: The resulting DeltaTable object
     """
     if not path and not table_identifier:
         raise ValueError(
@@ -182,11 +183,11 @@ def deduplicate(
     """
     Removes duplicates from an existing Delta Lake table.
 
-    :param delta_table: The target Delta table that contains duplicates.
-    :param temp_path: A temporary location used to stage de-duplicated data. This location needs to be empty.
+    :param delta_table: The target Delta Lake table that contains duplicates.
+    :param temp_path: A temporary location used to stage de-duplicated data. The location that `temp_path` points to needs to be empty.
     :param keys: A list of column names used to distinguish rows. The order of this list does not matter.
-    :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements weighing more than lesser ones.
-    :return: The same Delta table as **delta_table**
+    :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements "weighing" more than lesser ones. The columns will be evaluated in descending order. In the event of a tie, you will get non-deterministic results.
+    :return: The same Delta table as **delta_table**.
     """
     if tiebreaking_columns is None:
         tiebreaking_columns = []
