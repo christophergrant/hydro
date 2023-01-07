@@ -28,6 +28,14 @@ https://christophergrant.github.io/delta-hydro
 - Issue queries against Delta Log metadata, quickly and efficently getting things like partition sizes on huge tables - [hydro.delta.partition_stats](https://christophergrant.github.io/delta-hydro/api/delta.html#hydro.delta.partition_stats)
 - Other quality of life improvements like [hydro.delta.detail_enhanced](https://christophergrant.github.io/delta-hydro/api/delta.html#hydro.delta.detail_enhanced) and [hydro.spark.fields](https://christophergrant.github.io/delta-hydro/api/spark.html#hydro.spark.fields)
 
+## APIs
+
+The topic of  SQL vs  DataFrames is a hot one in the data space.
+
+SQL certainly has its place in analytic and other ad-hoc use cases, but it is missing the expressive power of an imperative language.
+
+This project is a testament to the power of the mix of imperative and declarative expression that DataFrames give. A lot of this code would be very verbose or impossible to express with SQL.
+
 ## Contributions ✨
 
 Contributions are welcome.

@@ -3,6 +3,7 @@ from __future__ import annotations
 from uuid import uuid4
 
 import pyspark.sql.functions as F
+from pyspark.sql import Column
 from pyspark.sql import DataFrame
 from pyspark.sql import Window
 from pyspark.sql.types import DataType
@@ -122,15 +123,21 @@ def deduplicate_dataframe(
     return deduped
 
 
-def hash_field(df: DataFrame, column_name: str, denylist_fields: list[str] = None, algorithm: str = 'md5', num_bits=256):
+def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str = 'md5', num_bits=256) -> Column:
+    """
+
+    :param df:
+    :param denylist_fields:
+    :param algorithm:
+    :param num_bits:
+    :return:
+    """
     supported_algorithms = ['sha1', 'sha2', 'md5']
 
     if algorithm not in supported_algorithms:
         raise ValueError(f'Algorithm {algorithm} not in supported algorithms {supported_algorithms}')
 
     all_fields = fields(df)
-    if column_name in all_fields:
-        raise ValueError(f'{column_name} already exists in dataframe')
 
     if denylist_fields:
         all_fields = list(set(all_fields) - set(denylist_fields))
@@ -142,4 +149,4 @@ def hash_field(df: DataFrame, column_name: str, denylist_fields: list[str] = Non
     else:
         hash_col = F.md5(F.concat_ws('', *all_fields))
 
-    return df.withColumn(column_name, hash_col)
+    return hash_col

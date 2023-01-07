@@ -96,43 +96,36 @@ def test_deduplicate_dataframe_tiebreaker():
 
 def test_field_hash_md5():
     df = spark.range(1)
-    final = hs.hash_field(df, 'brown')
+    column = hs.hash_fields(df)
+    final = df.withColumn('brown', column)
     assert _df_to_list_of_dict(final) == [{'id': 0, 'brown': 'cfcd208495d565ef66e7dff9f98764da'}]
 
 
 def test_field_hash_sha1():
     df = spark.range(1)
-    final = hs.hash_field(df, 'brown', algorithm='sha1')
+    column = hs.hash_fields(df, algorithm='sha1')
+    final = df.withColumn('brown', column)
+
     assert _df_to_list_of_dict(final) == [{'id': 0, 'brown': 'b6589fc6ab0dc82cf12099d1c2d40ab994e8410c'}]
 
 
 def test_field_hash_sha2():  # pragma: no cover
     df = spark.range(1)
-    final = hs.hash_field(df, 'brown', algorithm='sha2')
-    assert _df_to_list_of_dict(final) == [{'id': 0, 'brown': '5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9'}]
-
-
-def test_field_hash_sha2():
-    df = spark.range(1)
-    final = hs.hash_field(df, 'brown', algorithm='sha2')
+    column = hs.hash_fields(df, algorithm='sha2')
+    final = df.withColumn('brown', column)
     assert _df_to_list_of_dict(final) == [{'id': 0, 'brown': '5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9'}]
 
 
 def test_field_hash_nonsense_algorithm():
     df = spark.range(1)
     with pytest.raises(ValueError) as exception:
-        hs.hash_field(df, 'brown', algorithm='nonsense')
+        hs.hash_fields(df, algorithm='nonsense')
     assert exception.value.args[0] == """Algorithm nonsense not in supported algorithms ['sha1', 'sha2', 'md5']"""
-
-
-def test_field_hash_already_existing_column():
-    df = spark.range(1)
-    with pytest.raises(ValueError) as exception:
-        hs.hash_field(df, 'id', algorithm='sha2')
-    assert exception.value.args[0] == 'id already exists in dataframe'
 
 
 def test_field_hash_denylist():
     df = spark.range(1).withColumn('drop_this', F.lit(1))
-    final = hs.hash_field(df, 'brown', algorithm='md5', denylist_fields=['drop_this'])
+    column = hs.hash_fields(df, algorithm='md5', denylist_fields=['drop_this'])
+    final = df.withColumn('brown', column)
+
     assert _df_to_list_of_dict(final) == [{'id': 0, 'drop_this': 1, 'brown': 'cfcd208495d565ef66e7dff9f98764da'}]
