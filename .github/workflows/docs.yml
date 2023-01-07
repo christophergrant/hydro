@@ -1,7 +1,7 @@
 name: docs
 on: [push, pull_request, workflow_dispatch]
 jobs:
-  docs:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -13,4 +13,16 @@ jobs:
         run: |
           sphinx-build -n -T -b html docs/source/ _site
       - uses: actions/upload-pages-artifact@main
-      - uses: actions/deploy-pages@v1
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
