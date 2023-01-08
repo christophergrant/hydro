@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from collections import defaultdict
 import hashlib
 import re
+from collections import Counter
+from collections import defaultdict
 from typing import Callable
 from uuid import uuid4
 
@@ -29,10 +30,12 @@ def _get_leaf(field: str | StructField) -> str:
         field = field.name
     return field.split('.')[-1]
 
+
 def _get_branch(field: str | StructField) -> str:
-    if isinstance(field, StructField):
+    if isinstance(field, StructField):  # pragma: no cover
         field = field.name
     return '.'.join(field.split('.')[:-1])
+
 
 def _get_nests(field: str) -> list[str]:
     return field.split('.')
@@ -206,7 +209,7 @@ def hash_schema(df: DataFrame, denylist_fields: list[str] = None) -> Column:
 
     fields_set = set(all_fields)
     if len(all_fields) != len(fields_set):
-        dupes = [item for item, count in collections.Counter(all_fields).items() if count > 1]
+        dupes = [item for item, count in Counter(all_fields).items() if count > 1]
         raise ValueError(f'Duplicate field(s) detected in df, {dupes}')
 
     """

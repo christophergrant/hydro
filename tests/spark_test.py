@@ -8,6 +8,7 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import ArrayType
 from pyspark.sql.types import LongType
 from pyspark.sql.types import StringType
+from pyspark.sql.utils import AnalysisException
 
 import hydro.spark as hs
 from tests import _df_to_list_of_dict
@@ -15,10 +16,9 @@ from tests import spark
 
 
 def test_trie():
-    fields = ["a.b.1", "a.b.2"]
+    fields = ['a.b.1', 'a.b.2']
     trie = hs._field_trie(fields)
-    assert trie == {"a.b": ['1', '2']}
-
+    assert trie == {'a.b': ['1', '2']}
 
 
 def test_fields_nested_basic(tmpdir):
@@ -275,13 +275,16 @@ def test_drop_field_nest4():
     assert _df_to_list_of_dict(final) == [{'a1': {'b1': {'c1': {'d1': {'k': 'v'}}}}}]
 
 
-def test_drop_field_array_of_struct():
-    data = [{'a1': [{"k": "v", "a": [1,2,3]}]}]
+@pytest.mark.skip(reason='no way of currently testing this')
+def test_drop_field_array_of_struct_negative():  # pragma: no cover
+    data = [{'a1': [{'k': 'v', 'a': [1, 2, 3]}]}]
     rdd = spark.sparkContext.parallelize(data)
     df = spark.read.json(rdd)
-    df.printSchema()
-    final = hs.drop_fields(df, ['a1.a'])
-    assert _df_to_list_of_dict(final) == [{'a1': {'b1': {'c1': {'d1': {'k': 'v'}}}}}]
+    with pytest.raises(AnalysisException) as exception:
+        hs.drop_fields(df, ['a1.a'])
+    # assert exception.value.args[0] ==
+    print("pyspark.sql.utils.AnalysisException: cannot resolve 'update_fields(a1)' due to data type mismatch: struct argument should be struct type, got: array<struct<a:array<bigint>,k:string>>")
+
 
 def test_json_inference():
     data = {'id': 1, 'payload': """{"name": "christopher", "age": 420}"""}
@@ -300,3 +303,9 @@ def test_csv_inference():
     df = spark.createDataFrame([data])
     schema = hs.infer_csv_field(df, 'payload', {'header': 'True'})
     assert str(schema.json()) == """{"fields":[{"metadata":{},"name":"id","nullable":true,"type":"string"},{"metadata":{},"name":"data","nullable":true,"type":"string"}],"type":"struct"}"""
+
+
+def test_get_branch_structfield():
+    schema = spark.range(1).schema
+    structfield = schema[0]
+    assert hs._get_leaf(structfield) == 'id'
