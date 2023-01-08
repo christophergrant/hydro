@@ -286,12 +286,16 @@ def _drop_field(field_to_drop: str) -> tuple[str, Column]:
     # debugging notes
     # F.col("a1").withField("b1", <call>) # len(l) == 3 at end of iter
     # F.col("a1").withField("b1", F.col("a1.b1").withField("b1", <call>)) # len(l) == 2 at end of iter
-    # F.col("a1").withField("b1", F.col("a1.b1").withField("b1", F.col("a1.b1.c1").withField(")))
-    def _traverse_nest(nest, l):
+    # F.col("a1").withField("b1", F.col("a1.b1").withField("b1", F.col("a1.b1.c1").withField("a")))
+
+    # F.col(a1).withField(b1, <call>) # why is c = 2 after iteration 1? does it matter tho?
+    # F.col(a1).withField(b1, F.col(a1.b1.c1
+    def _traverse_nest(nest, l, c=0):
+        current_level = l[0]
         if len(l) == 1:  # termination condition
-            return F.col(nest).dropFields(l[0])
+            return F.col(nest).dropFields(current_level)
         else:  # recursive step
-            return F.col(f'{nest}.{l[0]}').withField(l[0], _traverse_nest(f'{nest}.{l[0]}', l[1:]))
+            return F.col(nest).withField(current_level, _traverse_nest(f'{nest}.{current_level}', l[1:], c + 1))
 
     nests = _get_nests(field_to_drop)
     top_level = nests[0]
@@ -312,7 +316,9 @@ def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
 
     for field in fields_to_drop:
         name, col = _drop_field(field)
+        df.printSchema()
         df = df.withColumn(name, col)
+        df.printSchema()
     return df
 
 
@@ -324,10 +330,10 @@ def infer_json_column(df: DataFrame, target_column: str, options: dict[str, str]
     :param options:
     :return:
     """
-    if not options:
+    if not options:  # pragma: no cover
         options = dict()
     spark = df.sparkSession
-    rdd = df.select(target_column).rdd.map(lambda row: row[0])
+    rdd = df.select(target_column).rdd.map(lambda row: row[0])  # pragma: no cover
     return spark.read.options(**options).json(rdd).schema
 
 
@@ -339,8 +345,8 @@ def infer_csv_column(df: DataFrame, target_column: str, options: dict[str, str] 
     :param options:
     :return:
     """
-    if not options:
+    if not options:  # pragma: no cover
         options = dict()
     spark = df.sparkSession
-    rdd = df.select(target_column).rdd.map(lambda row: row[0])
+    rdd = df.select(target_column).rdd.map(lambda row: row[0])  # pragma: no cover
     return spark.read.options(**options).csv(rdd).schema

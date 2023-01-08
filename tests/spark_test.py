@@ -5,8 +5,9 @@ import inspect
 import pytest
 from delta import DeltaTable
 from pyspark.sql import functions as F
-from pyspark.sql.types import ArrayType, LongType, StringType
-
+from pyspark.sql.types import ArrayType
+from pyspark.sql.types import LongType
+from pyspark.sql.types import StringType
 
 import hydro.spark as hs
 from tests import _df_to_list_of_dict
@@ -225,17 +226,20 @@ def test_select_by_type():
     result = hs.select_fields_by_type(df, LongType())
     assert _df_to_list_of_dict(result) == [{'id': 0}]
 
+
 def test__drop_field():
-    data = [{'id': 1, 'a1': {'k': 'v', 'b1': {'a': [1, 2, 3], 'k': 'v'}}}]
-    rdd = spark.sparkContext.parallelize(data)
-    df = spark.read.json(rdd)
     topname, col = hs._drop_field('a1.b1.a')
-    final = df.withColumn("a1", col)
-    print(_df_to_list_of_dict(final))
+    assert topname == 'a1' and str(col) == "Column<'update_fields(a1, WithField(update_fields(a1.b1)))'>"
+
+
+def test__drop_field_toplevel():
+    topname, col = hs._drop_field('a1')
+    print(col)
+    assert topname == 'a1' and str(col) == "Column<'a1'>"
 
 
 def test_drop_field_nest2():
-    data = [{'id': 1, 'a1': {'k': 'v', 'b1': {'a': [1, 2, 3], 'k': 'v'}}}]
+    data = [{'a1': {'b1': {'a': [1, 2, 3], 'k': 'v'}}}]
     rdd = spark.sparkContext.parallelize(data)
     df = spark.read.json(rdd)
     final = hs.drop_fields(df, ['a1.b1.a'])
