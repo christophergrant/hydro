@@ -115,21 +115,21 @@ def test_field_hash_sha1():
     assert _df_to_list_of_dict(final) == [{'id': 0, 'brown': 'b6589fc6ab0dc82cf12099d1c2d40ab994e8410c'}]
 
 
-def test_field_hash_sha2():  # pragma: no cover
+def test_field_hash_sha2():
     df = spark.range(1)
     column = hs.hash_fields(df, algorithm='sha2')
     final = df.withColumn('brown', column)
     assert _df_to_list_of_dict(final) == [{'id': 0, 'brown': '5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9'}]
 
 
-def test_field_hash_hash():  # pragma: no cover
+def test_field_hash_hash():
     df = spark.range(1)
     column = hs.hash_fields(df, algorithm='hash')
     final = df.withColumn('brown', column)
     assert _df_to_list_of_dict(final) == [{'id': 0, 'brown': 735846435}]
 
 
-def test_field_hash_xxhash64():  # pragma: no cover
+def test_field_hash_xxhash64():
     df = spark.range(1)
     column = hs.hash_fields(df, algorithm='xxhash64')
     final = df.withColumn('brown', column)

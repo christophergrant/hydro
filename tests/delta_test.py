@@ -225,7 +225,7 @@ def test_bootstrap_scd2_path(tmpdir):
         {'id': 1, 'location': 'Northern California', 'ts': '2019-11-01 00:00:00'},
     ]
     df = spark.createDataFrame(target_data)
-    delta_table = hd.bootstrap_scd2(df, 'id', 'ts', 'end_ts', path=path)
+    delta_table = hd.bootstrap_scd2(df, 'id', 'ts', 'end_ts', path=path, comment='test', table_properties={'test': 'onetwothree'})
     presented = _df_to_list_of_dict(delta_table)
     expected = [
         {

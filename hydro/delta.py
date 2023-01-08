@@ -37,7 +37,7 @@ def scd(
     :param scd_type: The type of SCD that is to be performed
     :return: The same `delta_table`
     """
-    if isinstance(keys, str):  # pragma: no cover
+    if isinstance(keys, str):
         keys = [keys]
 
     def _scd2(
@@ -142,12 +142,12 @@ def bootstrap_scd2(
     builder = DeltaTable.createOrReplace(
         source_df.sparkSession,
     )  # TODO change to createIfNotExists?
-    if table_properties:  # pragma: no cover
+    if table_properties:
         for k, v in table_properties.items():
             builder = builder.property(k, v)
     builder = builder.addColumns(source_df.schema)
     builder = builder.partitionedBy(*partition_columns)
-    if comment:  # pragma: no cover
+    if comment:
         builder = builder.comment(comment)
     if path:
         builder = builder.location(path)
@@ -160,8 +160,7 @@ def bootstrap_scd2(
             'append',
         ).saveAsTable(table_identifier)
         delta_table = DeltaTable.forName(source_df.sparkSession, table_identifier)
-    elif path:  # pragma: no cover
-        # literally no idea why coverage is failing here
+    else:
         final_payload.write.format('delta').option('mergeSchema', 'true').mode(
             'append',
         ).save(path)
