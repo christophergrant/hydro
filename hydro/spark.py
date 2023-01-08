@@ -307,7 +307,25 @@ def select_fields_by_regex(df: DataFrame, regex: str) -> DataFrame:
     return df.select(*matches)
 
 
-def _drop_field(field_to_drop: str) -> tuple[str, Column]:
+def _drop_field(field_to_drop: str | tuple[str, list[str]]) -> tuple[str, Column]:
+    # what data structure do we use for the trie? dict seems wrong, because this takes one "elem" at a time.
+    class DesconstructedField:
+        def __init__(self, field: str | tuple[str, list[str]]):
+
+            if isinstance(field, str):
+                branch = _get_branch(field)
+                self.top_level = branch[0]
+                self.middle_branches = branch[1:]
+                self.leaf = [_get_leaf(field)]
+            else:
+                branch = _get_branch(field[0])
+                self.top_level = branch[0]
+                self.middle_branches = branch[1:]
+                self.leaf = field[1]
+
+    if isinstance(field_to_drop, str):
+        field_to_drop = (_get_branch(field_to_drop), [_get_leaf(field_to_drop)])
+
     def _traverse_nest(nest, l, c=0):
         current_level = l[0]
         if len(l) == 1:  # termination condition
@@ -315,7 +333,7 @@ def _drop_field(field_to_drop: str) -> tuple[str, Column]:
         else:  # recursive step
             return F.col(nest).withField(current_level, _traverse_nest(f'{nest}.{current_level}', l[1:], c + 1))
 
-    nests = _get_nests(field_to_drop)
+    nests = _get_nests(field_to_drop[0])
     top_level = nests[0]
     if len(nests) == 1:
         return top_level, F.col(top_level)
