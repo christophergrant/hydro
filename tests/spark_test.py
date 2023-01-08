@@ -271,7 +271,7 @@ def test_drop_field_nest4():
 def test_json_inference():
     data = {'id': 1, 'payload': """{"name": "christopher", "age": 420}"""}
     df = spark.createDataFrame([data])
-    schema = hs.infer_json_column(df, 'payload')
+    schema = hs.infer_json_field(df, 'payload')
     assert str(schema.json()) == """{"fields":[{"metadata":{},"name":"age","nullable":true,"type":"long"},{"metadata":{},"name":"name","nullable":true,"type":"string"}],"type":"struct"}"""
 
 
@@ -283,5 +283,5 @@ def test_csv_inference():
             """,
     }
     df = spark.createDataFrame([data])
-    schema = hs.infer_csv_column(df, 'payload', {'header': 'True'})
+    schema = hs.infer_csv_field(df, 'payload', {'header': 'True'})
     assert str(schema.json()) == """{"fields":[{"metadata":{},"name":"id","nullable":true,"type":"string"},{"metadata":{},"name":"data","nullable":true,"type":"string"}],"type":"struct"}"""

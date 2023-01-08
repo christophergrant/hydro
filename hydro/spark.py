@@ -145,8 +145,13 @@ def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str
 
     :param df: Input dataframe that is to be hashed.
     :param denylist_fields: Fields that will not be hashed.
-    :param algorithm: The function that is used to generate the hash digest. Includes sha1, sha2, md5, hash, xxhash64.
-    :param num_bits: For SHA2 only. The number of output bits.
+    :param algorithm: The function that is used to generate the hash digest, includes:
+            * ``xxhash64`` (default) :class:`pyspark.sql.functions.xxhash64`
+            * ``md5`` :class:`pyspark.sql.functions.md5`
+            * ``sha1`` :class:`pyspark.sql.functions.sha1`
+            * ``sha2`` :class:`pyspark.sql.functions.sha2`
+            * ``hash`` :class:`pyspark.sql.functions.hash`
+    :param num_bits: Only for sha2. The desired bit length of the result.
     :return: A column that represents the hash.
     """
     supported_algorithms = ['sha1', 'sha2', 'md5', 'hash', 'xxhash64']
@@ -308,8 +313,10 @@ def _drop_field(field_to_drop: str) -> tuple[str, Column]:
 def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
     """
 
+    Drops a DataFrame's fields, including nested fields and top-level columns.
+
     :param df:
-    :param fields_to_drop:
+    :param fields_to_drop: A list of field names that are to be dropped
     :return:
     """
     # potential optimization, use a trie and resolve trie leafs together, as dropFields takes multiple field args
@@ -322,32 +329,36 @@ def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
     return df
 
 
-def infer_json_column(df: DataFrame, target_column: str, options: dict[str, str] = None) -> StructType:
+def infer_json_field(df: DataFrame, target_field: str, options: dict[str, str] = None) -> StructType:
     """
 
+    Parses a JSON string and infers its schema.
+
     :param df:
-    :param target_column:
-    :param options:
-    :return:
+    :param target_field: A field that contains CSV strings that are to be inferred.
+    :param options: Standard csv reader options, including `header`. See :class:pyspark.sql.DataFrameReader.json
+    :return: The inferred StructType
     """
     if not options:  # pragma: no cover
         options = dict()
     spark = df.sparkSession
-    rdd = df.select(target_column).rdd.map(lambda row: row[0])  # pragma: no cover
+    rdd = df.select(target_field).rdd.map(lambda row: row[0])  # pragma: no cover
     return spark.read.options(**options).json(rdd).schema
 
 
-def infer_csv_column(df: DataFrame, target_column: str, options: dict[str, str] = None) -> StructType:
+def infer_csv_field(df: DataFrame, target_field: str, options: dict[str, str] = None) -> StructType:
     """
 
+    Parses a CSV string and infers its schema.
+
     :param df:
-    :param target_column:
-    :param options:
-    :return:
+    :param target_field: A field that contains CSV strings that are to be inferred.
+    :param options: Standard csv reader options, including `header`. See :class:pyspark.sql.DataFrameReader.csv
+    :return: The inferred StructType
     """
     if not options:  # pragma: no cover
         options = dict()
     spark = df.sparkSession
-    rdd = df.select(target_column).rdd.map(lambda row: row[0])  # pragma: no cover
+    rdd = df.select(target_field).rdd.map(lambda row: row[0])  # pragma: no cover
     # noinspection PyTypeChecker
     return spark.read.options(**options).csv(rdd).schema
