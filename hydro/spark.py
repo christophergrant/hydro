@@ -15,27 +15,6 @@ from pyspark.sql.types import StructField
 from pyspark.sql.types import StructType
 
 
-class FieldTrie:
-    def __init__(self, fields):
-        self.trie = self._make_trie(fields)
-
-    def _make_trie(self, fields):
-        root = dict()
-        for field in fields:
-            current_dict = root
-            nests = _get_nests(field)
-            nests_len = len(nests) - 1
-            for index, nest in enumerate(nests):
-                if index == nests_len:
-                    current_dict = current_dict.append(nest)
-                elif index == nests_len - 1:
-                    current_dict = current_dict.setdefault(nest, [])
-                else:
-                    current_dict = current_dict.setdefault(nest, {})
-
-        return root
-
-
 def _field_trie(fields: list[str]):
     result = defaultdict(list)
     for field in fields:
