@@ -16,10 +16,14 @@ from pyspark.sql.types import StructField
 from pyspark.sql.types import StructType
 
 
-def _get_leaf(field: str | StructField):
+def _get_leaf(field: str | StructField) -> str:
     if isinstance(field, StructField):
         field = field.name
     return field.split('.')[-1]
+
+
+def _get_nests(field: str) -> list[str]:
+    return field.split('.')
 
 
 def _fields(
@@ -257,10 +261,86 @@ def map_fields(df: DataFrame, field_list: list[str], function: Callable | F):
 
 
 def select_fields_by_type(df: DataFrame, target_type: DataType):
+    """
+
+    :param df:
+    :param target_type:
+    :return:
+    """
     pertinent_fields = _get_fields_by_type(df, target_type)
     return df.select(*pertinent_fields)
 
 
 def select_fields_by_regex(df: DataFrame, regex: str):
+    """
+
+    :param df:
+    :param regex:
+    :return:
+    """
     matches = _get_fields_by_regex(df, regex)
     return df.select(*matches)
+
+
+def _drop_field(field_to_drop: str) -> tuple[str, Column]:
+    # debugging notes
+    # F.col("a1").withField("b1", <call>) # len(l) == 3 at end of iter
+    # F.col("a1").withField("b1", F.col("a1.b1").withField("b1", <call>)) # len(l) == 2 at end of iter
+    # F.col("a1").withField("b1", F.col("a1.b1").withField("b1", F.col("a1.b1.c1").withField(")))
+    def _traverse_nest(nest, l):
+        if len(l) == 1:  # termination condition
+            return F.col(nest).dropFields(l[0])
+        else:  # recursive step
+            return F.col(f'{nest}.{l[0]}').withField(l[0], _traverse_nest(f'{nest}.{l[0]}', l[1:]))
+
+    nests = _get_nests(field_to_drop)
+    top_level = nests[0]
+    if len(nests) == 1:
+        return top_level, F.col(top_level)
+    col = _traverse_nest(top_level, nests[1:])
+    return top_level, col
+
+
+def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
+    """
+
+    :param df:
+    :param fields_to_drop:
+    :return:
+    """
+    # potential optimization, use a trie and resolve trie leafs together, as dropFields takes multiple field args
+
+    for field in fields_to_drop:
+        name, col = _drop_field(field)
+        df = df.withColumn(name, col)
+    return df
+
+
+def infer_json_column(df: DataFrame, target_column: str, options: dict[str, str] = None) -> StructType:
+    """
+
+    :param df:
+    :param target_column:
+    :param options:
+    :return:
+    """
+    if not options:
+        options = dict()
+    spark = df.sparkSession
+    rdd = df.select(target_column).rdd.map(lambda row: row[0])
+    return spark.read.options(**options).json(rdd).schema
+
+
+def infer_csv_column(df: DataFrame, target_column: str, options: dict[str, str] = None) -> StructType:
+    """
+
+    :param df:
+    :param target_column:
+    :param options:
+    :return:
+    """
+    if not options:
+        options = dict()
+    spark = df.sparkSession
+    rdd = df.select(target_column).rdd.map(lambda row: row[0])
+    return spark.read.options(**options).csv(rdd).schema

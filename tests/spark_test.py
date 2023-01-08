@@ -5,10 +5,8 @@ import inspect
 import pytest
 from delta import DeltaTable
 from pyspark.sql import functions as F
-from pyspark.sql.types import ArrayType
-from pyspark.sql.types import IntegerType
-from pyspark.sql.types import LongType
-from pyspark.sql.types import StringType
+from pyspark.sql.types import ArrayType, LongType, StringType
+
 
 import hydro.spark as hs
 from tests import _df_to_list_of_dict
@@ -226,3 +224,54 @@ def test_select_by_type():
     df = spark.range(1).withColumn('nonsense', F.lit('nonsense  '))
     result = hs.select_fields_by_type(df, LongType())
     assert _df_to_list_of_dict(result) == [{'id': 0}]
+
+def test__drop_field():
+    data = [{'id': 1, 'a1': {'k': 'v', 'b1': {'a': [1, 2, 3], 'k': 'v'}}}]
+    rdd = spark.sparkContext.parallelize(data)
+    df = spark.read.json(rdd)
+    topname, col = hs._drop_field('a1.b1.a')
+    final = df.withColumn("a1", col)
+    print(_df_to_list_of_dict(final))
+
+
+def test_drop_field_nest2():
+    data = [{'id': 1, 'a1': {'k': 'v', 'b1': {'a': [1, 2, 3], 'k': 'v'}}}]
+    rdd = spark.sparkContext.parallelize(data)
+    df = spark.read.json(rdd)
+    final = hs.drop_fields(df, ['a1.b1.a'])
+    assert _df_to_list_of_dict(final) == [{'a1': {'b1': {'k': 'v'}}}]
+
+
+def test_drop_field_nest3():
+    data = [{'a1': {'b1': {'c1': {'a': [1, 2, 3], 'k': 'v'}}}}]
+    rdd = spark.sparkContext.parallelize(data)
+    df = spark.read.json(rdd)
+    final = hs.drop_fields(df, ['a1.b1.c1.a'])
+    assert _df_to_list_of_dict(final) == [{'a1': {'b1': {'c1': {'k': 'v'}}}}]
+
+
+def test_drop_field_nest4():
+    data = [{'a1': {'b1': {'c1': {'d1': {'a': [1, 2, 3], 'k': 'v'}}}}}]
+    rdd = spark.sparkContext.parallelize(data)
+    df = spark.read.json(rdd)
+    final = hs.drop_fields(df, ['a1.b1.c1.d1.a'])
+    assert _df_to_list_of_dict(final) == [{'a1': {'b1': {'c1': {'d1': {'k': 'v'}}}}}]
+
+
+def test_json_inference():
+    data = {'id': 1, 'payload': """{"name": "christopher", "age": 420}"""}
+    df = spark.createDataFrame([data])
+    schema = hs.infer_json_column(df, 'payload')
+    assert str(schema.json()) == """{"fields":[{"metadata":{},"name":"age","nullable":true,"type":"long"},{"metadata":{},"name":"name","nullable":true,"type":"string"}],"type":"struct"}"""
+
+
+def test_csv_inference():
+    data = {
+        'id': 1, 'payload': """id,data
+            1,"data"
+            2,"newdata"
+            """,
+    }
+    df = spark.createDataFrame([data])
+    schema = hs.infer_csv_column(df, 'payload', {'header': 'True'})
+    assert str(schema.json()) == """{"fields":[{"metadata":{},"name":"id","nullable":true,"type":"string"},{"metadata":{},"name":"data","nullable":true,"type":"string"}],"type":"struct"}"""
