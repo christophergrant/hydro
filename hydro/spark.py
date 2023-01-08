@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import collections
+from collections import defaultdict
 import hashlib
 import re
 from typing import Callable
@@ -15,11 +15,45 @@ from pyspark.sql.types import StructField
 from pyspark.sql.types import StructType
 
 
+class FieldTrie:
+    def __init__(self, fields):
+        self.trie = self._make_trie(fields)
+
+    def _make_trie(self, fields):
+        root = dict()
+        for field in fields:
+            current_dict = root
+            nests = _get_nests(field)
+            nests_len = len(nests) - 1
+            for index, nest in enumerate(nests):
+                if index == nests_len:
+                    current_dict = current_dict.append(nest)
+                elif index == nests_len - 1:
+                    current_dict = current_dict.setdefault(nest, [])
+                else:
+                    current_dict = current_dict.setdefault(nest, {})
+
+        return root
+
+
+def _field_trie(fields: list[str]):
+    result = defaultdict(list)
+    for field in fields:
+        leaf = _get_leaf(field)
+        branch = _get_branch(field)
+        result[branch].append(leaf)
+    return result
+
+
 def _get_leaf(field: str | StructField) -> str:
     if isinstance(field, StructField):
         field = field.name
     return field.split('.')[-1]
 
+def _get_branch(field: str | StructField) -> str:
+    if isinstance(field, StructField):
+        field = field.name
+    return '.'.join(field.split('.')[:-1])
 
 def _get_nests(field: str) -> list[str]:
     return field.split('.')
@@ -95,9 +129,6 @@ def deduplicate_dataframe(
 ) -> DataFrame:
     """
     Removes duplicates from a Spark DataFrame.
-
-    can we validate without keys? not meaningfully
-    is there an instance where we would want to provide keys but also specify full_row dupes?
 
     :param df: The target Delta Lake table that contains duplicates.
     :param keys: A list of column names used to distinguish rows. The order of this list does not matter.
@@ -295,13 +326,6 @@ def select_fields_by_regex(df: DataFrame, regex: str) -> DataFrame:
 
 
 def _drop_field(field_to_drop: str) -> tuple[str, Column]:
-    # debugging notes
-    # F.col("a1").withField("b1", <call>) # len(l) == 3 at end of iter
-    # F.col("a1").withField("b1", F.col("a1.b1").withField("b1", <call>)) # len(l) == 2 at end of iter
-    # F.col("a1").withField("b1", F.col("a1.b1").withField("b1", F.col("a1.b1.c1").withField("a")))
-
-    # F.col(a1).withField(b1, <call>) # why is c = 2 after iteration 1? does it matter tho?
-    # F.col(a1).withField(b1, F.col(a1.b1.c1
     def _traverse_nest(nest, l, c=0):
         current_level = l[0]
         if len(l) == 1:  # termination condition

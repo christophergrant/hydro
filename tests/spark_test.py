@@ -14,6 +14,13 @@ from tests import _df_to_list_of_dict
 from tests import spark
 
 
+def test_trie():
+    fields = ["a.b.1", "a.b.2"]
+    trie = hs._field_trie(fields)
+    assert trie == {"a.b": ['1', '2']}
+
+
+
 def test_fields_nested_basic(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
     spark.range(1).withColumn('s1', F.struct(F.lit('a').alias('c1'))).write.format('delta').save(
@@ -267,6 +274,14 @@ def test_drop_field_nest4():
     final = hs.drop_fields(df, ['a1.b1.c1.d1.a'])
     assert _df_to_list_of_dict(final) == [{'a1': {'b1': {'c1': {'d1': {'k': 'v'}}}}}]
 
+
+def test_drop_field_array_of_struct():
+    data = [{'a1': [{"k": "v", "a": [1,2,3]}]}]
+    rdd = spark.sparkContext.parallelize(data)
+    df = spark.read.json(rdd)
+    df.printSchema()
+    final = hs.drop_fields(df, ['a1.a'])
+    assert _df_to_list_of_dict(final) == [{'a1': {'b1': {'c1': {'d1': {'k': 'v'}}}}}]
 
 def test_json_inference():
     data = {'id': 1, 'payload': """{"name": "christopher", "age": 420}"""}
