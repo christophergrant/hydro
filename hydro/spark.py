@@ -4,6 +4,7 @@ import collections
 import hashlib
 import re
 from typing import Callable
+from typing import Union
 from uuid import uuid4
 
 import pyspark.sql.functions as F
@@ -11,7 +12,14 @@ from pyspark.sql import Column
 from pyspark.sql import DataFrame
 from pyspark.sql import Window
 from pyspark.sql.types import DataType
+from pyspark.sql.types import StructField
 from pyspark.sql.types import StructType
+
+
+def _get_leaf(field: str | StructField):
+    if isinstance(field, StructField):
+        field = field.name
+    return field.split('.')[-1]
 
 
 def _fields(
@@ -190,14 +198,29 @@ def hash_schema(df: DataFrame, denylist_fields: list[str] = None) -> Column:
     return hash_col
 
 
-def _map_fields(df: DataFrame, fields_to_map: list[str], function: Callable) -> DataFrame:
+def _get_fields_by_regex(df: DataFrame, regex: str) -> list[str]:
+    # ChatGPT 🤖 prompt:
+    # i have a regex pattern string. write a python program that iterates through a list of strings and returns elements that match the regex
+    regex = re.compile(regex)
+    all_fields = fields(df)
+    matches = [field for field in all_fields if regex.search(field)]
+    return matches
 
+
+def _get_fields_by_type(df: DataFrame, target_type: DataType) -> list[str]:
+    all_fields = fields_with_types(df)
+    print(all_fields)
+    pertinent_fields = [field[0] for field in all_fields if field[1] == target_type]
+    return pertinent_fields
+
+
+def _map_fields(df: DataFrame, fields_to_map: list[str], function: Callable) -> DataFrame:
     for field in fields_to_map:
         df = df.withColumn(field, function(field))
     return df
 
 
-def map_fields_by_regex(df: DataFrame, regex: str, function: Callable):
+def map_fields_by_regex(df: DataFrame, regex: str, function: Callable, search_leafs_only: bool = True):
     """
 
     :param df:
@@ -205,11 +228,8 @@ def map_fields_by_regex(df: DataFrame, regex: str, function: Callable):
     :param function:
     :return:
     """
-    # ChatGPT 🤖 prompt:
-    # i have a regex pattern string. write a python program that iterates through a list of strings and returns elements that match the regex
-    regex = re.compile(regex)
-    all_fields = fields(df)
-    matches = [field for field in all_fields if regex.search(field)]
+
+    matches = _get_fields_by_regex(df, regex)
     return _map_fields(df, matches, function)
 
 
@@ -221,12 +241,11 @@ def map_fields_by_type(df: DataFrame, target_type: DataType, function: Callable)
     :param function:
     :return:
     """
-    all_fields = fields_with_types(df)
-    pertinent_fields = [field[0] for field in all_fields if field[1] == target_type]
+    pertinent_fields = _get_fields_by_type(df, target_type)
     return _map_fields(df, pertinent_fields, function)
 
 
-def map_fields(df: DataFrame, field_list: list[str], function: F):
+def map_fields(df: DataFrame, field_list: list[str], function: Callable | F):
     """
 
     :param df:
@@ -235,3 +254,13 @@ def map_fields(df: DataFrame, field_list: list[str], function: F):
     :return:
     """
     return _map_fields(df, field_list, function)
+
+
+def select_fields_by_type(df: DataFrame, target_type: DataType):
+    pertinent_fields = _get_fields_by_type(df, target_type)
+    return df.select(*pertinent_fields)
+
+
+def select_fields_by_regex(df: DataFrame, regex: str):
+    matches = _get_fields_by_regex(df, regex)
+    return df.select(*matches)

@@ -6,6 +6,7 @@ import pytest
 from delta import DeltaTable
 from pyspark.sql import functions as F
 from pyspark.sql.types import ArrayType
+from pyspark.sql.types import IntegerType
 from pyspark.sql.types import LongType
 from pyspark.sql.types import StringType
 
@@ -195,3 +196,33 @@ def test_map_by_regex():
     df = spark.range(1).withColumn('nonsense', F.lit('nonsense  '))
     final = hs.map_fields_by_regex(df, r'non.*', F.trim)
     assert _df_to_list_of_dict(final) == [{'id': 0, 'nonsense': 'nonsense'}]
+
+
+def test_get_leaf_toplevel():
+    field = 'id'
+    result = hs._get_leaf(field)
+    assert result == 'id'
+
+
+def test_get_leaf_nested():
+    field = 's.id'
+    result = hs._get_leaf(field)
+    assert result == 'id'
+
+
+def test_get_leaf_structfield():
+    schema = spark.range(1).schema
+    structfield = schema[0]
+    assert hs._get_leaf(structfield) == 'id'
+
+
+def test_select_by_regex():
+    df = spark.range(1).withColumn('nonsense', F.lit('nonsense  '))
+    result = hs.select_fields_by_regex(df, 'id.*')
+    assert _df_to_list_of_dict(result) == [{'id': 0}]
+
+
+def test_select_by_type():
+    df = spark.range(1).withColumn('nonsense', F.lit('nonsense  '))
+    result = hs.select_fields_by_type(df, LongType())
+    assert _df_to_list_of_dict(result) == [{'id': 0}]
