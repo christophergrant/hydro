@@ -146,6 +146,7 @@ def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str
     :param df: Input dataframe that is to be hashed.
     :param denylist_fields: Fields that will not be hashed.
     :param algorithm: The function that is used to generate the hash digest, includes:
+
             * ``xxhash64`` (default) :class:`pyspark.sql.functions.xxhash64`
             * ``md5`` :class:`pyspark.sql.functions.md5`
             * ``sha1`` :class:`pyspark.sql.functions.sha1`
@@ -229,37 +230,43 @@ def _map_fields(df: DataFrame, fields_to_map: list[str], function: Callable) -> 
     return df
 
 
-def map_fields_by_regex(df: DataFrame, regex: str, function: Callable):
+def map_fields_by_regex(df: DataFrame, regex: str, function: Callable) -> DataFrame:
     """
 
+    Apply a function `function` over fields that match a regular expression.
+
     :param df:
-    :param regex:
-    :param function:
-    :return:
+    :param regex: Regular expression pattern. Uses Python's `re` module.
+    :param function: Any `pyspark.sql.function` or lambda function that takes a column.
+    :return: Resulting DataFrame
     """
 
     matches = _get_fields_by_regex(df, regex)
     return _map_fields(df, matches, function)
 
 
-def map_fields_by_type(df: DataFrame, target_type: DataType, function: Callable):
+def map_fields_by_type(df: DataFrame, target_type: DataType, function: Callable) -> DataFrame:
     """
+
+    Apply a function `function` over fields that have a target type.
 
     :param df:
     :param target_type:
-    :param function:
-    :return:
+    :param function: Any `pyspark.sql.function` or lambda function that takes a column.
+    :return: Resulting DataFrame
     """
     pertinent_fields = _get_fields_by_type(df, target_type)
     return _map_fields(df, pertinent_fields, function)
 
 
-def map_fields(df: DataFrame, field_list: list[str], function: Callable | F):
+def map_fields(df: DataFrame, field_list: list[str], function: Callable) -> DataFrame:
     """
+
+    Apply a function `function` over fields that are specified in a list.
 
     :param df:
     :param field_list:
-    :param function:
+    :param function: Any `pyspark.sql.function` or lambda function that takes a column.
     :return:
     """
     return _map_fields(df, field_list, function)
@@ -276,7 +283,7 @@ def select_fields_by_type(df: DataFrame, target_type: DataType):
     return df.select(*pertinent_fields)
 
 
-def select_fields_by_regex(df: DataFrame, regex: str):
+def select_fields_by_regex(df: DataFrame, regex: str) -> DataFrame:
     """
 
     :param df:
