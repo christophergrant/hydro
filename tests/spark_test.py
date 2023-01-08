@@ -96,7 +96,7 @@ def test_deduplicate_dataframe_tiebreaker():
 
 def test_field_hash_md5():
     df = spark.range(1)
-    column = hs.hash_fields(df)
+    column = hs.hash_fields(df, algorithm='md5')
     final = df.withColumn('brown', column)
     assert _df_to_list_of_dict(final) == [{'id': 0, 'brown': 'cfcd208495d565ef66e7dff9f98764da'}]
 
@@ -116,11 +116,25 @@ def test_field_hash_sha2():  # pragma: no cover
     assert _df_to_list_of_dict(final) == [{'id': 0, 'brown': '5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9'}]
 
 
+def test_field_hash_hash():  # pragma: no cover
+    df = spark.range(1)
+    column = hs.hash_fields(df, algorithm='hash')
+    final = df.withColumn('brown', column)
+    assert _df_to_list_of_dict(final) == [{'id': 0, 'brown': 735846435}]
+
+
+def test_field_hash_xxhash64():  # pragma: no cover
+    df = spark.range(1)
+    column = hs.hash_fields(df, algorithm='xxhash64')
+    final = df.withColumn('brown', column)
+    assert _df_to_list_of_dict(final) == [{'id': 0, 'brown': -6091425354261976140}]
+
+
 def test_field_hash_nonsense_algorithm():
     df = spark.range(1)
     with pytest.raises(ValueError) as exception:
         hs.hash_fields(df, algorithm='nonsense')
-    assert exception.value.args[0] == """Algorithm nonsense not in supported algorithms ['sha1', 'sha2', 'md5']"""
+    assert exception.value.args[0] == """Algorithm nonsense not in supported algorithms ['sha1', 'sha2', 'md5', 'hash', 'xxhash64']"""
 
 
 def test_field_hash_denylist():

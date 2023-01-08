@@ -126,18 +126,18 @@ def deduplicate_dataframe(
     return deduped
 
 
-def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str = 'md5', num_bits=256) -> Column:
+def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str = 'xxhash64', num_bits=256) -> Column:
     """
 
     Generates a hash digest of all fields.
 
     :param df: Input dataframe that is to be hashed.
     :param denylist_fields: Fields that will not be hashed.
-    :param algorithm: The function that is used to generate the hash digest. Includes sha1, sha2, and md5.
+    :param algorithm: The function that is used to generate the hash digest. Includes sha1, sha2, md5, hash, xxhash64.
     :param num_bits: For SHA2 only. The number of output bits.
     :return: A column that represents the hash.
     """
-    supported_algorithms = ['sha1', 'sha2', 'md5']
+    supported_algorithms = ['sha1', 'sha2', 'md5', 'hash', 'xxhash64']
 
     if algorithm not in supported_algorithms:
         raise ValueError(f'Algorithm {algorithm} not in supported algorithms {supported_algorithms}')
@@ -152,6 +152,10 @@ def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str
         hash_col = F.sha1(F.concat_ws('', *all_fields))
     elif algorithm == 'sha2':
         hash_col = F.sha2(F.concat_ws('', *all_fields), num_bits)
+    elif algorithm == 'hash':
+        hash_col = F.hash(F.concat_ws('', *all_fields))
+    elif algorithm == 'xxhash64':
+        hash_col = F.xxhash64(F.concat_ws('', *all_fields))
     else:
         hash_col = F.md5(F.concat_ws('', *all_fields))
 
