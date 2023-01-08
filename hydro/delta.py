@@ -108,7 +108,7 @@ def bootstrap_scd2(
     effective_ts: str,
     end_ts: str,
     table_properties: dict[str, str] = None,
-    partition_columns: list[str] = [],
+    partition_columns: list[str] = None,
     comment: str = None,
     path: str = None,
     table_identifier: str = None,
@@ -127,6 +127,8 @@ def bootstrap_scd2(
     :param table_identifier: The table name. Optionally qualified with a database name [catalog_name.] [database_name.] table_name.
     :return: The resulting DeltaTable object
     """
+    if partition_columns is None:  # pragma: no cover
+        partition_columns = []
     if not path and not table_identifier:
         raise ValueError(
             'Need to specify one (or both) of `path` and `table_identifier`',

@@ -4,7 +4,6 @@ import collections
 import hashlib
 import re
 from typing import Callable
-from typing import Union
 from uuid import uuid4
 
 import pyspark.sql.functions as F
@@ -111,7 +110,7 @@ def deduplicate_dataframe(
     if tiebreaking_columns is None:
         tiebreaking_columns = []
 
-    if isinstance(keys, str):  # pragma: no cover
+    if isinstance(keys, str):
         keys = [keys]
 
     if not keys:
@@ -123,6 +122,7 @@ def deduplicate_dataframe(
     count_col = uuid4().hex  # generate a random column name that is virtually certain to not be in the dataset
     window = Window.partitionBy(keys)
 
+    # noinspection PyTypeChecker
     dupes = df.withColumn(count_col, F.count('*').over(window)).filter(F.col(count_col) > 1).drop(count_col)
     if tiebreaking_columns and not df.isStreaming:
         row_number_col = uuid4().hex
@@ -224,7 +224,7 @@ def _map_fields(df: DataFrame, fields_to_map: list[str], function: Callable) -> 
     return df
 
 
-def map_fields_by_regex(df: DataFrame, regex: str, function: Callable, search_leafs_only: bool = True):
+def map_fields_by_regex(df: DataFrame, regex: str, function: Callable):
     """
 
     :param df:
@@ -349,4 +349,5 @@ def infer_csv_column(df: DataFrame, target_column: str, options: dict[str, str] 
         options = dict()
     spark = df.sparkSession
     rdd = df.select(target_column).rdd.map(lambda row: row[0])  # pragma: no cover
+    # noinspection PyTypeChecker
     return spark.read.options(**options).csv(rdd).schema

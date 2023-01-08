@@ -73,6 +73,12 @@ def test_deduplicate_dataframe_keys_notiebreak():
     assert _df_to_list_of_dict(result) == [{'id': 0}]
 
 
+def test_deduplicate_dataframe_keys_notiebreak_str():
+    df = spark.range(1).union(spark.range(1))
+    result = hs.deduplicate_dataframe(df, keys='id')
+    assert _df_to_list_of_dict(result) == [{'id': 0}]
+
+
 def test_deduplicate_dataframe_nokeys():
     data = [{'id': 0, 'ts': 1}, {'id': 0, 'ts': 1}]
     df = spark.createDataFrame(data)
@@ -228,14 +234,14 @@ def test_select_by_type():
 
 
 def test__drop_field():
-    topname, col = hs._drop_field('a1.b1.a')
-    assert topname == 'a1' and str(col) == "Column<'update_fields(a1, WithField(update_fields(a1.b1)))'>"
+    top_name, col = hs._drop_field('a1.b1.a')
+    assert top_name == 'a1' and str(col) == "Column<'update_fields(a1, WithField(update_fields(a1.b1)))'>"
 
 
 def test__drop_field_toplevel():
-    topname, col = hs._drop_field('a1')
+    top_name, col = hs._drop_field('a1')
     print(col)
-    assert topname == 'a1' and str(col) == "Column<'a1'>"
+    assert top_name == 'a1' and str(col) == "Column<'a1'>"
 
 
 def test_drop_field_nest2():
