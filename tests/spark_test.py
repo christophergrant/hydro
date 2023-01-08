@@ -153,10 +153,28 @@ def test_schema_hash_duplicate_column():
     assert exception.value.args[0] == """Duplicate field(s) detected in df, ['nonsense']"""
 
 
+def test_map_list():
+    df = spark.range(1).withColumn('nonsense', F.lit('nonsense  ')).withColumn('empty', F.lit('  '))
+    final = hs.map_fields(df, ['nonsense', 'empty'], F.trim)
+    assert _df_to_list_of_dict(final) == [{'id': 0, 'nonsense': 'nonsense', 'empty': ''}]
+
+
 def test_map_by_type():
-    df = spark.range(1).withColumn('nonsense', F.lit('nonsense  '))
+    df = spark.range(1).withColumn('nonsense', F.lit('nonsense  ')).withColumn('empty', F.lit('  '))
     final = hs.map_fields_by_type(df, StringType(), F.trim)
-    assert _df_to_list_of_dict(final) == [{'id': 0, 'nonsense': 'nonsense'}]
+    assert _df_to_list_of_dict(final) == [{'id': 0, 'nonsense': 'nonsense', 'empty': ''}]
+
+
+def test_map_by_type_lambda():
+    df = spark.range(1).withColumn('nonsense', F.lit('nonsens  '))
+    final = hs.map_fields_by_type(df, StringType(), lambda x: F.concat(F.trim(x), F.lit('ical')))
+    assert _df_to_list_of_dict(final) == [{'id': 0, 'nonsense': 'nonsensical'}]
+
+
+def test_map_by_type_lambda_expr():
+    df = spark.range(1).withColumn('null', F.lit('  '))
+    final = hs.map_fields_by_type(df, StringType(), lambda x: F.expr(f"nullif(trim({x}), '')"))
+    assert _df_to_list_of_dict(final) == [{'id': 0, 'null': None}]
 
 
 def test_map_by_regex():

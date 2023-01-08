@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections
 import hashlib
 import re
+from typing import Callable
 from uuid import uuid4
 
 import pyspark.sql.functions as F
@@ -185,13 +186,21 @@ def hash_schema(df: DataFrame, denylist_fields: list[str] = None) -> Column:
     return hash_col
 
 
-def _map_fields(df: DataFrame, fields_to_map: list[str], function: F) -> DataFrame:
+def _map_fields(df: DataFrame, fields_to_map: list[str], function: Callable) -> DataFrame:
+
     for field in fields_to_map:
         df = df.withColumn(field, function(field))
     return df
 
 
-def map_fields_by_regex(df: DataFrame, regex: str, function: F):
+def map_fields_by_regex(df: DataFrame, regex: str, function: Callable):
+    """
+
+    :param df:
+    :param regex:
+    :param function:
+    :return:
+    """
     # ChatGPT 🤖 prompt:
     # i have a regex pattern string. write a python program that iterates through a list of strings and returns elements that match the regex
     regex = re.compile(regex)
@@ -200,7 +209,25 @@ def map_fields_by_regex(df: DataFrame, regex: str, function: F):
     return _map_fields(df, matches, function)
 
 
-def map_fields_by_type(df: DataFrame, target_type: DataType, function: F):
+def map_fields_by_type(df: DataFrame, target_type: DataType, function: Callable):
+    """
+
+    :param df:
+    :param target_type:
+    :param function:
+    :return:
+    """
     all_fields = fields_with_types(df)
     pertinent_fields = [field[0] for field in all_fields if field[1] == target_type]
     return _map_fields(df, pertinent_fields, function)
+
+
+def map_fields(df: DataFrame, field_list: list[str], function: F):
+    """
+
+    :param df:
+    :param field_list:
+    :param function:
+    :return:
+    """
+    return _map_fields(df, field_list, function)
