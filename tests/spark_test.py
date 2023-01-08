@@ -151,3 +151,15 @@ def test_schema_hash_duplicate_column():
     with pytest.raises(ValueError) as exception:
         hs.hash_schema(joined_df)
     assert exception.value.args[0] == """Duplicate field(s) detected in df, ['nonsense']"""
+
+
+def test_map_by_type():
+    df = spark.range(1).withColumn('nonsense', F.lit('nonsense  '))
+    final = hs.map_fields_by_type(df, StringType(), F.trim)
+    assert _df_to_list_of_dict(final) == [{'id': 0, 'nonsense': 'nonsense'}]
+
+
+def test_map_by_regex():
+    df = spark.range(1).withColumn('nonsense', F.lit('nonsense  '))
+    final = hs.map_fields_by_regex(df, r'non.*', F.trim)
+    assert _df_to_list_of_dict(final) == [{'id': 0, 'nonsense': 'nonsense'}]
