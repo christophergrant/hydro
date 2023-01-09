@@ -23,19 +23,72 @@ def scd(
         scd_type: int = 2,
 ) -> DeltaTable:
     """
-    Slowly Changing Dimensions (SCD) is a data management/engineering technique for handling changes in dimensions.
 
-    Type 1 is a simple overwrite, where old data is overwritten with the new.
+    Executes a slowly changing dimensions transformation and merge.
 
-    Type 2 lets you track the history of an entity, creating a new row for each change in state.
+    Supports Type 1 and Type 2 SCD.
 
-    :param delta_table: The Delta Lake table that is to be updated. See `hydro.delta.bootstrap_scd2` if you need to create an SCD2 table.
-    :param source: The new data that will be used to update `delta_table`
-    :param keys: Column(s) that identify unique entities
-    :param effective_ts: The start timestamp for a given row
-    :param end_ts: The end timestamp for a given row. Used for Type 2 SCD
+    :param delta_table: The target Delta Lake table that is to be updated. See `hydro.delta.bootstrap_scd2` if you need to create an SCD2 table.
+    :param source: The source data that will be used to merge with `delta_table`
+    :param keys: Column name(s) that identify unique rows. Can be a single column name as a string, or a list of strings, where order of the list does not matter.
+    :param effective_ts: The name of the existing column that will be used as the “start” or “effective” indicator for a given entity. The column be of any orderable type, including timestamp, date, string, and numeric types.
+    :param end_ts: The name of the non-existing column that will be used as the “end” indicator for a given entity. Its type will match the type of effective_ts.
     :param scd_type: The type of SCD that is to be performed
     :return: The same `delta_table`
+
+    Example
+    -----
+
+     For **SCD Type 2**,
+
+     Given a Delta Lake table:
+
+    .. code-block:: python
+
+        +---+-----------+----------+----------+
+        | id|   location|      date|  end_date|
+        +---+-----------+----------+----------+
+        |  1|      Kochi|2018-01-01|2019-01-01|
+        |  1|Lake Forest|2019-01-01|      null|
+        +---+-----------+----------+----------+
+
+    And a source DataFrame:
+
+    .. code-block:: python
+
+        +---+--------+----------+
+        | id|location|      date|
+        +---+--------+----------+
+        |  1|  Irvine|2020-01-01|
+        |  2|  Venice|2022-01-01|
+        +---+--------+----------+
+
+
+
+    .. code-block:: python
+
+        import hydro.delta as hd
+        hd.scd(delta_table, df, ["id"], effective_ts="date", end_ts="end_date")
+
+    Results in:
+
+    .. code-block:: python
+
+        +---+-----------+----------+----------+
+        | id|   location|      date|  end_date|
+        +---+-----------+----------+----------+
+        |  1|      Kochi|2018-01-01|2019-01-01|
+        |  1|Lake Forest|2019-01-01|2020-01-01|
+        |  1|     Irvine|2020-01-01|      null|
+        |  2|     Venice|2022-01-01|      null|
+        +---+-----------+----------+----------+
+
+    See Also
+    -----
+
+    bootstrap_scd2
+
+
     """
     if isinstance(keys, str):
         keys = [keys]
@@ -122,7 +175,7 @@ def bootstrap_scd2(
     :param effective_ts: The name of the existing column that will be used as the "start" or "effective" timestamp for a given entity. The column be of any orderable type, including timestamp, date, string, and numeric types.
     :param end_ts: The name of the non-existing column that will be used as the "end" timestamp for a given entity. Its type will match the type of `effective_ts`.
     :param table_properties: A set of [Delta Lake table properties](https://docs.delta.io/latest/table-properties.html) or custom properties.
-    :param partition_columns: A set of column names that will be used for on-disk partitioning.
+    :param partition_columns: A set of column names that will be used to partition the resulting Delta Lake table.
     :param comment: Comment that describes the table.
     :param path: Specify the path to the directory where table data is stored, which could be a path on distributed storage.
     :param table_identifier: The table name. Optionally qualified with a database name [catalog_name.] [database_name.] table_name.
@@ -134,14 +187,14 @@ def bootstrap_scd2(
 
     Given a DataFrame:
 
-    .. code-block:: text
+    .. code-block:: python
 
-	    +---+-----------+----------+
-	    | id|   location|      date|
-	    +---+-----------+----------+
-	    |  1|      Kochi|2018-03-01|
-	    |  1|Lake Forest|2023-01-01|
-	    +---+-----------+----------+
+            +---+-----------+----------+
+            | id|   location|      date|
+            +---+-----------+----------+
+            |  1|      Kochi|2018-01-01|
+            |  1|Lake Forest|2019-01-01|
+            +---+-----------+----------+
 
     Run bootstrap_scd2:
 
@@ -158,14 +211,14 @@ def bootstrap_scd2(
 
     Results in:
 
-    .. code-block:: text
+    .. code-block:: python
 
-	    +---+-----------+----------+----------+
-	    | id|   location|      date|  end_date|
-	    +---+-----------+----------+----------+
-	    |  1|      Kochi|2018-03-01|2023-01-01|
-	    |  1|Lake Forest|2023-01-01|      null|
-	    +---+-----------+----------+----------+
+            +---+-----------+----------+----------+
+            | id|   location|      date|  end_date|
+            +---+-----------+----------+----------+
+            |  1|      Kochi|2018-01-01|2019-01-01|
+            |  1|Lake Forest|2019-01-01|      null|
+            +---+-----------+----------+----------+
 
     See Also
     -----
@@ -272,13 +325,14 @@ def partial_update_set(
     :param target_alias: A temporary name given to the target Delta Table of the MERGE
     :return: A dictionary that describes non-destructive updates for all fields in `delta_frame`
 
-    ---
+    Example
+    -----
 
     **Example**
 
     Given a Delta Lake table:
 
-    .. code-block:: text
+    .. code-block:: python
 
         +---+----------+------+
         | id|  location|status|
@@ -288,7 +342,7 @@ def partial_update_set(
 
     And some source data that will partially update the Delta Lake table:
 
-    .. code-block:: text
+    .. code-block:: python
 
         +---+--------+------+
         | id|location|status|
@@ -307,7 +361,7 @@ def partial_update_set(
 
     With the resulting Delta Lake table:
 
-    .. code-block:: text
+    .. code-block:: python
 
         +---+----------+------+
         | id|  location|status|
@@ -339,7 +393,6 @@ def file_stats(delta_table: DeltaTable) -> DataFrame:
 
     This is done by scanning the table's transaction log, so it is fast, cheap, and scalable.
 
-    :param delta_table:
     :return: A DataFrame that describes the physical files that compose a given Delta Lake table
     """
     return _snapshot_allfiles(delta_table)
@@ -357,7 +410,6 @@ def partition_stats(delta_table: DeltaTable) -> DataFrame:
 
     This is done by scanning the table's transaction log, so it is fast, cheap, and scalable.
 
-    :param delta_table:
     :return: A DataFrame that describes the size of all partitions in the table
     """
     allfiles = _snapshot_allfiles(delta_table)
@@ -378,7 +430,6 @@ def zordering_stats(delta_table: DeltaTable) -> DataFrame:
 
     The resulting DataFrame has schema of `zOrderBy`, `count`.
 
-    :param delta_table:
     :return: A DataFrame with schema `zOrderBy`, `count`.
     """
     return (
@@ -414,7 +465,6 @@ def detail(delta_table: DeltaTable) -> dict[str, Any]:
     - percentage collected stats of the current snapshot
     - snapshot version
 
-    :param delta_table:
     :return: A dictionary representing enhanced details of a Delta Lake table
     """
     detail_output = _DetailOutput(delta_table)
