@@ -1,7 +1,7 @@
 ---
 name: publish
 
-on: [release]
+on: [push, release]
 
 jobs:
   build-and-publish:
