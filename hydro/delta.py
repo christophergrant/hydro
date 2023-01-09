@@ -239,6 +239,18 @@ def partial_update_set(
 
 
 def file_stats(delta_table: DeltaTable) -> DataFrame:
+    """
+
+    This is a utility function that gives detailed information about the files of a Delta Lake table.
+
+    It returns a DataFrame that gives per-file information including:
+    -
+
+    It does this via scanning the table's transaction log, so it is fast, cheap, and scalable.
+
+    :param delta_table:
+    :return: A DataFrame that describes the physical files that compose a given Delta Lake table
+    """
     return _snapshot_allfiles(delta_table)
 
 
