@@ -4,6 +4,7 @@ import hashlib
 import re
 from collections import Counter
 from collections import defaultdict
+from copy import copy
 from typing import Callable
 from uuid import uuid4
 
@@ -16,29 +17,38 @@ from pyspark.sql.types import StructField
 from pyspark.sql.types import StructType
 
 
+class _DeconstructedField:
+    """
+    a.b.c.d => top_level=a, branches=[b,c], leaf=d
+    a.b.c => top_level=a, branches=b, leaf=c
+    a.b => top_level=a, branches=[], leaf=b
+    a => top_level=a?, branches=[], leaf=None
+    """
+    """
+    in what way are we using this? what outputs do we need?
+    """
+
+    def __init__(self, field: str | StructField):
+        split_field = field.split('.')
+        self.levels = copy(split_field)
+        self.trunk = split_field.pop(0)
+        if len(split_field) > 1:
+            *self.branches, self.leaf = split_field
+        elif len(split_field) == 0:
+            self.branches, self.leaf = [], None
+        else:
+            self.branches, self.leaf = [], split_field[0]
+        self.trunk_and_branches = '.'.join([self.trunk] + self.branches)
+
+
 def _field_trie(fields: list[str]):
     result = defaultdict(list)
     for field in fields:
-        leaf = _get_leaf(field)
-        branch = _get_branch(field)
-        result[branch].append(leaf)
+        deconstructed_field = _DeconstructedField(field)
+        trunk_and_branches = deconstructed_field.trunk_and_branches
+        leaf = deconstructed_field.leaf
+        result[trunk_and_branches].append(leaf)
     return result
-
-
-def _get_leaf(field: str | StructField) -> str:
-    if isinstance(field, StructField):
-        field = field.name
-    return field.split('.')[-1]
-
-
-def _get_branch(field: str | StructField) -> str:
-    if isinstance(field, StructField):  # pragma: no cover
-        field = field.name
-    return '.'.join(field.split('.')[:-1])
-
-
-def _get_nests(field: str) -> list[str]:
-    return field.split('.')
 
 
 def _fields(
@@ -307,25 +317,7 @@ def select_fields_by_regex(df: DataFrame, regex: str) -> DataFrame:
     return df.select(*matches)
 
 
-def _drop_field(field_to_drop: str | tuple[str, list[str]]) -> tuple[str, Column]:
-    # what data structure do we use for the trie? dict seems wrong, because this takes one "elem" at a time.
-    class DesconstructedField:
-        def __init__(self, field: str | tuple[str, list[str]]):
-
-            if isinstance(field, str):
-                branch = _get_branch(field)
-                self.top_level = branch[0]
-                self.middle_branches = branch[1:]
-                self.leaf = [_get_leaf(field)]
-            else:
-                branch = _get_branch(field[0])
-                self.top_level = branch[0]
-                self.middle_branches = branch[1:]
-                self.leaf = field[1]
-
-    if isinstance(field_to_drop, str):
-        field_to_drop = (_get_branch(field_to_drop), [_get_leaf(field_to_drop)])
-
+def _drop_field(field_to_drop: str) -> tuple[str, Column]:
     def _traverse_nest(nest, l, c=0):
         current_level = l[0]
         if len(l) == 1:  # termination condition
@@ -333,12 +325,11 @@ def _drop_field(field_to_drop: str | tuple[str, list[str]]) -> tuple[str, Column
         else:  # recursive step
             return F.col(nest).withField(current_level, _traverse_nest(f'{nest}.{current_level}', l[1:], c + 1))
 
-    nests = _get_nests(field_to_drop[0])
-    top_level = nests[0]
-    if len(nests) == 1:
-        return top_level, F.col(top_level)
-    col = _traverse_nest(top_level, nests[1:])
-    return top_level, col
+    df = _DeconstructedField(field_to_drop)
+    if not df.leaf and not df.branches:
+        return df.trunk, F.col(df.trunk)
+    col = _traverse_nest(df.trunk, df.levels[1:])
+    return df.trunk, col
 
 
 def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:

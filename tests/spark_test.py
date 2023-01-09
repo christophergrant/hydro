@@ -210,24 +210,6 @@ def test_map_by_regex():
     assert _df_to_list_of_dict(final) == [{'id': 0, 'nonsense': 'nonsense'}]
 
 
-def test_get_leaf_toplevel():
-    field = 'id'
-    result = hs._get_leaf(field)
-    assert result == 'id'
-
-
-def test_get_leaf_nested():
-    field = 's.id'
-    result = hs._get_leaf(field)
-    assert result == 'id'
-
-
-def test_get_leaf_structfield():
-    schema = spark.range(1).schema
-    structfield = schema[0]
-    assert hs._get_leaf(structfield) == 'id'
-
-
 def test_select_by_regex():
     df = spark.range(1).withColumn('nonsense', F.lit('nonsense  '))
     result = hs.select_fields_by_regex(df, 'id.*')
@@ -305,7 +287,19 @@ def test_csv_inference():
     assert str(schema.json()) == """{"fields":[{"metadata":{},"name":"id","nullable":true,"type":"string"},{"metadata":{},"name":"data","nullable":true,"type":"string"}],"type":"struct"}"""
 
 
-def test_get_branch_structfield():
-    schema = spark.range(1).schema
-    structfield = schema[0]
-    assert hs._get_leaf(structfield) == 'id'
+def test_deconstructed_field_toplevel():
+    field = 'a1'
+    result = hs._DeconstructedField(field).__dict__
+    assert result == {'levels': ['a1'], 'trunk': 'a1', 'branches': [], 'leaf': None, 'trunk_and_branches': 'a1'}
+
+
+def test_deconstructed_field_l2():
+    field = 'a1.b'
+    result = hs._DeconstructedField(field).__dict__
+    assert result == {'levels': ['a1', 'b'], 'trunk': 'a1', 'branches': [], 'leaf': 'b', 'trunk_and_branches': 'a1'}
+
+
+def test_deconstructed_field_l3():
+    field = 'a1.b1.c'
+    result = hs._DeconstructedField(field).__dict__
+    assert result == {'levels': ['a1', 'b1', 'c'], 'trunk': 'a1', 'branches': ['b1'], 'leaf': 'c', 'trunk_and_branches': 'a1.b1'}
