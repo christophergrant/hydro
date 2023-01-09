@@ -238,6 +238,10 @@ def partial_update_set(
     return {field: F.coalesce(f'{source_alias}.{field}', f'{target_alias}.{field}') for field in fields}
 
 
+def file_stats(delta_table: DeltaTable) -> DataFrame:
+    return _snapshot_allfiles(delta_table)
+
+
 def partition_stats(delta_table: DeltaTable) -> DataFrame:
     """
 
@@ -255,7 +259,7 @@ def partition_stats(delta_table: DeltaTable) -> DataFrame:
     :return: A DataFrame that describes the size of all partitions in the table
     """
     allfiles = _snapshot_allfiles(delta_table)
-    detail = DetailOutput(delta_table)
+    detail = _DetailOutput(delta_table)
     partition_columns = [f'partitionValues.{col}' for col in detail.partition_columns]
     return allfiles.groupBy(*partition_columns).agg(
         F.sum('size').alias('total_bytes'),
@@ -303,7 +307,7 @@ def detail(delta_table: DeltaTable) -> dict[Any, Any]:
     :param delta_table: A Delta Lake table that you would like to analyze
     :return: A dictionary representing details of a Delta Lake table
     """
-    detail_output = DetailOutput(delta_table)
+    detail_output = _DetailOutput(delta_table)
     detail_output.humanize()
     return detail_output.to_dict()
 
@@ -362,7 +366,7 @@ def _snapshot_allfiles(delta_table: DeltaTable) -> DataFrame:
     return DataFrame(delta_log.snapshot().allFiles(), spark)
 
 
-class DetailOutput:
+class _DetailOutput:
     def __init__(self, delta_table: DeltaTable):
         detail_output = delta_table.detail().collect()[0].asDict()
         self.created_at = detail_output['createdAt']

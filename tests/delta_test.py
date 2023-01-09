@@ -74,53 +74,30 @@ def test_detail_enhanced(tmpdir):
     assert enhanced_details['numRecords'] == '1.0'
 
 
+def test_file_stats(tmpdir):
+    path = f'{tmpdir}/{inspect.stack()[0][3]}'
+    spark.range(1).write.format('delta').save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+
+    presented = _df_to_list_of_dict(hd.file_stats(delta_table))[0]
+    expected = {'path': 'part-00000-23d2fd65-1b58-48e1-a913-59b8c19bce0b-c000.snappy.parquet', 'partitionValues': {}, 'size': 478, 'modificationTime': 1673232534727, 'dataChange': False, 'stats': '{"numRecords":1,"minValues":{"id":0},"maxValues":{"id":0},"nullCount":{"id":0}}', 'tags': None}
+    fuzzy_elems = ['path', 'modificationTime']
+    for elem in fuzzy_elems:
+        del presented[elem]
+        del expected[elem]
+    assert presented == expected
+
+
 def test_partition_stats(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
-    spark.range(100).withColumn('part', F.col('id') % 5).write.partitionBy('part').format(
+    spark.range(1).withColumn('part', F.col('id') % 5).write.partitionBy('part').format(
         'delta',
     ).save(path)
     delta_table = DeltaTable.forPath(spark, path)
 
     presented = _df_to_list_of_dict(hd.partition_stats(delta_table))
-    expected = [
-        {
-            'part': '0',
-            'total_bytes': 567,
-            'bytes_quantiles': [567, 567, 567, 567, 567],
-            'num_records': 20.0,
-            'num_files': 1,
-        },
-        {
-            'part': '4',
-            'total_bytes': 569,
-            'bytes_quantiles': [569, 569, 569, 569, 569],
-            'num_records': 20.0,
-            'num_files': 1,
-        },
-        {
-            'part': '2',
-            'total_bytes': 619,
-            'bytes_quantiles': [619, 619, 619, 619, 619],
-            'num_records': 20.0,
-            'num_files': 1,
-        },
-        {
-            'part': '1',
-            'total_bytes': 569,
-            'bytes_quantiles': [569, 569, 569, 569, 569],
-            'num_records': 20.0,
-            'num_files': 1,
-        },
-        {
-            'part': '3',
-            'total_bytes': 569,
-            'bytes_quantiles': [569, 569, 569, 569, 569],
-            'num_records': 20.0,
-            'num_files': 1,
-        },
-    ]
-    assert True  # TODO fix this: can mask the non-deterministic fields or do fuzzy equality
-    # assert presented == expected
+    expected = [{'part': '0', 'total_bytes': 478, 'bytes_quantiles': [478, 478, 478, 478, 478], 'num_records': 1.0, 'num_files': 1}]
+    assert presented == expected
 
 
 def test_partial_update_set_merge(tmpdir):
