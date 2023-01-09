@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+from copy import copy
 from collections import Counter
 from collections import defaultdict
 from copy import copy
@@ -19,9 +20,7 @@ from pyspark.sql.types import StructType
 
 
 class _DeconstructedField:
-    def __init__(self, field: str | StructField):
-        if isinstance(field, StructField):
-            field = field.name
+    def __init__(self, field: str):
         split_field = field.split('.')
         self.levels = copy(split_field)
         self.trunk = split_field.pop(0)
