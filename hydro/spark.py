@@ -6,6 +6,7 @@ from collections import Counter
 from collections import defaultdict
 from copy import copy
 from typing import Callable
+from typing import Optional
 from uuid import uuid4
 
 import pyspark.sql.functions as F
@@ -317,19 +318,25 @@ def select_fields_by_regex(df: DataFrame, regex: str) -> DataFrame:
     return df.select(*matches)
 
 
-def _drop_field(field_to_drop: str) -> tuple[str, Column]:
+def _drop_fields(fields_to_drop: tuple[str, list[str | None]]) -> tuple[str, Column]:
+
+    address, leaves = fields_to_drop
+
+    if not leaves or leaves[0] is None:
+        raise ValueError(f'Cannot drop top-level field `{address}` with this function. Use df.drop() instead.')
+
     def _traverse_nest(nest, l, c=0):
-        current_level = l[0]
-        if len(l) == 1:  # termination condition
-            return F.col(nest).dropFields(current_level)
+        if len(l) == 0:  # termination condition
+            return F.col(nest).dropFields(*leaves)
         else:  # recursive step
+            current_level = l[0]
             return F.col(nest).withField(current_level, _traverse_nest(f'{nest}.{current_level}', l[1:], c + 1))
 
-    df = _DeconstructedField(field_to_drop)
-    if not df.leaf and not df.branches:
-        return df.trunk, F.col(df.trunk)
-    col = _traverse_nest(df.trunk, df.levels[1:])
-    return df.trunk, col
+    levels = address.split('.')
+    if len(levels) == 1:
+        return address, F.col(address).dropFields(*leaves)
+    col = _traverse_nest(levels[0], levels[1:])
+    return levels[0], col
 
 
 def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
@@ -343,11 +350,13 @@ def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
     """
     # potential optimization, use a trie and resolve trie leafs together, as dropFields takes multiple field args
 
-    for field in fields_to_drop:
-        name, col = _drop_field(field)
-        df.printSchema()
-        df = df.withColumn(name, col)
-        df.printSchema()
+    tries = _field_trie(fields_to_drop)
+    for trie in tries.items():
+        if trie[1] == [None]:
+            df = df.drop(trie[0])
+        else:
+            name, col = _drop_fields(trie)
+            df = df.withColumn(name, col)
     return df
 
 
