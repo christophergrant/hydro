@@ -3,13 +3,13 @@
 [![main](https://github.com/christophergrant/delta-hydro/actions/workflows/main.yml/badge.svg)](https://github.com/christophergrant/delta-hydro/actions/workflows/main.yml)
 [![codecov](https://codecov.io/gh/christophergrant/delta-hydro/branch/main/graph/badge.svg?token=Z64814CV1E)](https://codecov.io/gh/christophergrant/delta-hydro)
 
-hydro is a collection of Python-based [Apache Spark](https://spark.apache.org/) and [Delta Lake](https://delta.io/) tooling.
+hydro is a collection of Python-based [Apache Spark](https://spark.apache.org/) and [Delta Lake](https://delta.io/) extensions.
 
 See [Key Functionality](#key-functionality-) for concrete use cases.
 
 ## Warning ⚠️
 
-hydro is not yet ready for production. Use it at your own risk.
+hydro is well tested but not battle hardened, yet. Use it at your own risk.
 
 ## Installation
 

@@ -15,43 +15,6 @@ A Python-based toolkit for making data engineering with Delta Lake easier, more 
 :class: sd-rounded-pill
 ```
 
----
-
-::::{grid} 1 2 2 3
-:gutter: 1 1 1 2
-
-:::{grid-item-card} {octicon}`git-pull-request-closed;1.5em;sd-mr-1` Deduplication
-:link: guides/deduplication
-:link-type: doc
-
-Hydro extends the functionality of Delta Lake to support in-place deletions without doing full overwrites.
-+++
-[Learn more »](guides/deduplication.md)
-:::
-
-:::{grid-item-card} {octicon}`fold;1.5em;sd-mr-1` SCDs
-:link: guides/scd
-:link-type: doc
-
-Use hydro to implement powerful data engineering patterns like Slowly Changing Dimensions.
-
-+++
-[Learn more »](guides/scd.md)
-:::
-
-:::{grid-item-card} {octicon}`light-bulb;1.5em;sd-mr-1` Table Insights
-:link: guides/insights
-:link-type: doc
-
-Hydro grants deep insight into the physical structure of Delta Lake tables using blazingly fast techniques.
-
-+++
-[Learn more »](guides/insights.md)
-:::
-
-::::
-
----
 
 ```{rubric} API reference
 ```
@@ -77,6 +40,7 @@ Hydro grants deep insight into the physical structure of Delta Lake tables using
 
 Delta Lake is supported by the open community, [Delta Lake](https://delta.io/community/).
 
+And Apache Spark is also supported by its open community, [Apache Spark](https://spark.apache.org/community.html) 
 
 ```{toctree}
 :hidden:
@@ -88,8 +52,8 @@ intro.md
 :caption: Guides
 
 guides/deduplication.md
-guides/scd.md
-guides/insights.md
+# guides/scd.md
+# guides/insights.md
 ```
 
 ```{toctree}
