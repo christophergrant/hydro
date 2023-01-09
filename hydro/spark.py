@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import re
-from copy import copy
 from collections import Counter
 from collections import defaultdict
 from copy import copy
