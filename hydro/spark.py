@@ -4,7 +4,9 @@ import hashlib
 import re
 from collections import Counter
 from collections import defaultdict
+from copy import copy
 from typing import Callable
+from typing import Optional
 from uuid import uuid4
 
 import pyspark.sql.functions as F
@@ -16,29 +18,30 @@ from pyspark.sql.types import StructField
 from pyspark.sql.types import StructType
 
 
+class _DeconstructedField:
+    def __init__(self, field: str | StructField):
+        if isinstance(field, StructField):
+            field = field.name
+        split_field = field.split('.')
+        self.levels = copy(split_field)
+        self.trunk = split_field.pop(0)
+        if len(split_field) > 1:
+            *self.branches, self.leaf = split_field
+        elif len(split_field) == 0:
+            self.branches, self.leaf = [], None
+        else:
+            self.branches, self.leaf = [], split_field[0]
+        self.trunk_and_branches = '.'.join([self.trunk] + self.branches)
+
+
 def _field_trie(fields: list[str]):
     result = defaultdict(list)
     for field in fields:
-        leaf = _get_leaf(field)
-        branch = _get_branch(field)
-        result[branch].append(leaf)
+        deconstructed_field = _DeconstructedField(field)
+        trunk_and_branches = deconstructed_field.trunk_and_branches
+        leaf = deconstructed_field.leaf
+        result[trunk_and_branches].append(leaf)
     return result
-
-
-def _get_leaf(field: str | StructField) -> str:
-    if isinstance(field, StructField):
-        field = field.name
-    return field.split('.')[-1]
-
-
-def _get_branch(field: str | StructField) -> str:
-    if isinstance(field, StructField):  # pragma: no cover
-        field = field.name
-    return '.'.join(field.split('.')[:-1])
-
-
-def _get_nests(field: str) -> list[str]:
-    return field.split('.')
 
 
 def _fields(
@@ -307,20 +310,25 @@ def select_fields_by_regex(df: DataFrame, regex: str) -> DataFrame:
     return df.select(*matches)
 
 
-def _drop_field(field_to_drop: str) -> tuple[str, Column]:
+def _drop_fields(fields_to_drop: tuple[str, list[str | None]]) -> tuple[str, Column]:
+
+    address, leaves = fields_to_drop
+
+    if not leaves or leaves[0] is None:
+        raise ValueError(f'Cannot drop top-level field `{address}` with this function. Use df.drop() instead.')
+
     def _traverse_nest(nest, l, c=0):
-        current_level = l[0]
-        if len(l) == 1:  # termination condition
-            return F.col(nest).dropFields(current_level)
+        if len(l) == 0:  # termination condition
+            return F.col(nest).dropFields(*leaves)
         else:  # recursive step
+            current_level = l[0]
             return F.col(nest).withField(current_level, _traverse_nest(f'{nest}.{current_level}', l[1:], c + 1))
 
-    nests = _get_nests(field_to_drop)
-    top_level = nests[0]
-    if len(nests) == 1:
-        return top_level, F.col(top_level)
-    col = _traverse_nest(top_level, nests[1:])
-    return top_level, col
+    levels = address.split('.')
+    if len(levels) == 1:
+        return address, F.col(address).dropFields(*leaves)
+    col = _traverse_nest(levels[0], levels[1:])
+    return levels[0], col
 
 
 def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
@@ -334,11 +342,13 @@ def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
     """
     # potential optimization, use a trie and resolve trie leafs together, as dropFields takes multiple field args
 
-    for field in fields_to_drop:
-        name, col = _drop_field(field)
-        df.printSchema()
-        df = df.withColumn(name, col)
-        df.printSchema()
+    tries = _field_trie(fields_to_drop)
+    for trie in tries.items():
+        if trie[1] == [None]:
+            df = df.drop(trie[0])
+        else:
+            name, col = _drop_fields(trie)
+            df = df.withColumn(name, col)
     return df
 
 
