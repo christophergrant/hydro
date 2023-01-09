@@ -19,17 +19,9 @@ from pyspark.sql.types import StructType
 
 
 class _DeconstructedField:
-    """
-    a.b.c.d => top_level=a, branches=[b,c], leaf=d
-    a.b.c => top_level=a, branches=b, leaf=c
-    a.b => top_level=a, branches=[], leaf=b
-    a => top_level=a?, branches=[], leaf=None
-    """
-    """
-    in what way are we using this? what outputs do we need?
-    """
-
     def __init__(self, field: str | StructField):
+        if isinstance(field, StructField):
+            field = field.name
         split_field = field.split('.')
         self.levels = copy(split_field)
         self.trunk = split_field.pop(0)
