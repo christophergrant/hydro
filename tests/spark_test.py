@@ -8,8 +8,6 @@ from pyspark.sql import functions as F
 from pyspark.sql.types import ArrayType
 from pyspark.sql.types import LongType
 from pyspark.sql.types import StringType
-from pyspark.sql.types import StructField
-from pyspark.sql.types import StructType
 from pyspark.sql.utils import AnalysisException
 
 import hydro.spark as hs

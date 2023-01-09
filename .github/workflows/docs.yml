@@ -1,6 +1,8 @@
 ---
 name: docs
-on: [push, pull_request, workflow_dispatch]
+
+on: [release]
+
 jobs:
   build:
     runs-on: ubuntu-latest

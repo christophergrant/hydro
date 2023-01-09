@@ -1,6 +1,8 @@
 ---
 name: cov
+
 on: [push]
+
 jobs:
   run:
     runs-on: ubuntu-latest

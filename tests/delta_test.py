@@ -23,23 +23,12 @@ def test_snapshot_allfiles_basic(tmpdir):
     assert hd._snapshot_allfiles(delta_table).count() == 1
 
 
-def test_detail_basic(tmpdir):
-    path = f'{tmpdir}/{inspect.stack()[0][3]}'
-    spark.range(10000).repartition(1000).write.format('delta').save(path)
-    delta_table = DeltaTable.forPath(spark, path)
-    humanized_details = hd.detail(delta_table)
-    raw_details = humanized_details
-    assert raw_details['num_files'] == '1,000' and raw_details['size'].endswith(
-        'KiB',
-    )
-
-
 def test_get_table_zordering_onecol(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
     spark.range(10).write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
     delta_table.optimize().executeZOrderBy('id')
-    presented = hd.get_table_zordering(delta_table).collect()[0].asDict()
+    presented = hd.zordering_stats(delta_table).collect()[0].asDict()
     expected = {'zOrderBy': '["id"]', 'count': 1}
     assert presented == expected
 
@@ -55,7 +44,7 @@ def test_get_table_zordering_twocol(tmpdir):
         'delta',
     ).save(path)
     delta_table.optimize().executeZOrderBy('id', 'id2')
-    presented = _df_to_list_of_dict(hd.get_table_zordering(delta_table))
+    presented = _df_to_list_of_dict(hd.zordering_stats(delta_table))
     expected = [
         {'zOrderBy': '["id","id2"]', 'count': 1},
         {'zOrderBy': '["id"]', 'count': 1},
@@ -64,14 +53,14 @@ def test_get_table_zordering_twocol(tmpdir):
 
 
 @pytest.mark.timeout(10)  # this should not take longer than 5 seconds
-def test_detail_enhanced(tmpdir):
+def test_detail(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
-    spark.range(1).write.format('delta').save(path)
+    spark.range(10000).write.format('delta').save(path)
 
     delta_table = DeltaTable.forPath(spark, path)
-    enhanced_details = hd.detail_enhanced(delta_table)
+    enhanced_details = hd.detail(delta_table)
     pprint(enhanced_details)
-    assert enhanced_details['numRecords'] == '1.0'
+    assert enhanced_details['numRecords'] == '10,000.0'
 
 
 def test_file_stats(tmpdir):

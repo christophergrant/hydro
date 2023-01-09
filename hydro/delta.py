@@ -15,12 +15,12 @@ from hydro import _humanize_number
 
 
 def scd(
-    delta_table: DeltaTable,
-    source: DataFrame,
-    keys: list[str] | str,
-    effective_ts: str,
-    end_ts: str = None,
-    scd_type: int = 2,
+        delta_table: DeltaTable,
+        source: DataFrame,
+        keys: list[str] | str,
+        effective_ts: str,
+        end_ts: str = None,
+        scd_type: int = 2,
 ) -> DeltaTable:
     """
     Slowly Changing Dimensions (SCD) is a data management/engineering technique for handling changes in dimensions.
@@ -41,11 +41,11 @@ def scd(
         keys = [keys]
 
     def _scd2(
-        delta_table: DeltaTable,
-        source: DataFrame,
-        keys: list[str] | str,
-        effective_ts: str,
-        end_ts: str,
+            delta_table: DeltaTable,
+            source: DataFrame,
+            keys: list[str] | str,
+            effective_ts: str,
+            end_ts: str,
     ):
         if not end_ts:
             raise ValueError(
@@ -70,10 +70,10 @@ def scd(
         return delta_table
 
     def _scd1(
-        delta_table: DeltaTable,
-        source: DataFrame,
-        keys: list[str] | str,
-        effective_ts: str,
+            delta_table: DeltaTable,
+            source: DataFrame,
+            keys: list[str] | str,
+            effective_ts: str,
     ):
         window = Window.partitionBy(keys).orderBy(F.col(effective_ts).desc())
         row_number_uuid = uuid4().hex  # avoid column collisions by using uuid
@@ -103,30 +103,77 @@ def scd(
 
 
 def bootstrap_scd2(
-    source_df: DataFrame,
-    keys: list[str] | str,
-    effective_ts: str,
-    end_ts: str,
-    table_properties: dict[str, str] = None,
-    partition_columns: list[str] = None,
-    comment: str = None,
-    path: str = None,
-    table_identifier: str = None,
+        source_df: DataFrame,
+        keys: list[str] | str,
+        effective_ts: str,
+        end_ts: str,
+        table_properties: dict[str, str] = None,
+        partition_columns: list[str] = None,
+        comment: str = None,
+        path: str = None,
+        table_identifier: str = None,
 ) -> DeltaTable:
     """
-    Creates an SCD2-ready Delta Lake table.
+
+    Creates an SCD2-ready Delta Lake table from a source DataFrame.
 
     :param source_df: Source data that will populate the final Delta Lake table
     :param keys: Column name(s) that identify unique rows. Can be a single column name as a string, or a list of strings, where order of the list does not matter.
-    :param effective_ts: The name of the existing column that will be used as the "start" or "effective" timestamp for a given entity.
-    :param end_ts: The name of the non-existing column that will be used as the "end" timestamp for a given entity.
-    :param table_properties: A set of [Delta Lake table properties](https://docs.delta.io/latest/table-properties.html). Can also be custom properties.
+    :param effective_ts: The name of the existing column that will be used as the "start" or "effective" timestamp for a given entity. The column be of any orderable type, including timestamp, date, string, and numeric types.
+    :param end_ts: The name of the non-existing column that will be used as the "end" timestamp for a given entity. Its type will match the type of `effective_ts`.
+    :param table_properties: A set of [Delta Lake table properties](https://docs.delta.io/latest/table-properties.html) or custom properties.
     :param partition_columns: A set of column names that will be used for on-disk partitioning.
     :param comment: Comment that describes the table.
     :param path: Specify the path to the directory where table data is stored, which could be a path on distributed storage.
     :param table_identifier: The table name. Optionally qualified with a database name [catalog_name.] [database_name.] table_name.
     :return: The resulting DeltaTable object
+
+
+    Example
+    -----
+
+    Given a DataFrame:
+
+    .. code-block:: text
+
+	    +---+-----------+----------+
+	    | id|   location|      date|
+	    +---+-----------+----------+
+	    |  1|      Kochi|2018-03-01|
+	    |  1|Lake Forest|2023-01-01|
+	    +---+-----------+----------+
+
+    Run bootstrap_scd2:
+
+    .. code-block:: python
+
+        import hydro.delta as hd
+        delta_table = hd.bootstrap_scd2(
+        df,
+        keys=["id"],
+        effective_ts="date",
+        end_ts="end_date",
+        path="/path/to/delta/table",
+        )
+
+    Results in:
+
+    .. code-block:: text
+
+	    +---+-----------+----------+----------+
+	    | id|   location|      date|  end_date|
+	    +---+-----------+----------+----------+
+	    |  1|      Kochi|2018-03-01|2023-01-01|
+	    |  1|Lake Forest|2023-01-01|      null|
+	    +---+-----------+----------+----------+
+
+    See Also
+    -----
+
+    scd
+
     """
+
     if partition_columns is None:  # pragma: no cover
         partition_columns = []
     if not path and not table_identifier:
@@ -154,7 +201,6 @@ def bootstrap_scd2(
     if table_identifier:
         builder = builder.tableName(table_identifier)
     builder.execute()
-    delta_table = None
     if table_identifier:
         final_payload.write.format('delta').option('mergeSchema', 'true').mode(
             'append',
@@ -169,17 +215,16 @@ def bootstrap_scd2(
 
 
 def deduplicate(
-    delta_table: DeltaTable,
-    backup_path: str,
-    keys: list[str] | str,
-    tiebreaking_columns: list[str] = None,
+        delta_table: DeltaTable,
+        backup_path: str,
+        keys: list[str] | str,
+        tiebreaking_columns: list[str] = None,
 ) -> DeltaTable:
     """
-    Removes duplicates from an existing Delta Lake table. This is a destructive operation that occurs over multiple transactions.
+    Removes duplicates from a Delta Lake table.
 
-    Be careful.
 
-    :param delta_table: The target Delta Lake table that contains duplicates.
+    :param delta_table:
     :param backup_path: A temporary location used to stage de-duplicated data. The location that `temp_path` points to needs to be empty.
     :param keys: A list of column names used to distinguish rows. The order of this list does not matter.
     :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements "weighing" more than lesser ones. The columns will be evaluated in descending order. In the event of a tie, you will get non-deterministic results.
@@ -187,7 +232,7 @@ def deduplicate(
     """
     if isinstance(keys, str):  # pragma: no cover
         keys = [keys]
-    detail_object = detail_enhanced(delta_table)
+    detail_object = detail(delta_table)
     target_location = detail_object['location']
     table_version = detail_object['version']
     print(
@@ -213,23 +258,64 @@ def deduplicate(
 
 
 def partial_update_set(
-    delta_frame: DataFrame | DeltaTable,
-    source_alias: str = 'source',
-    target_alias: str = 'target',
+        delta_frame: DataFrame | DeltaTable,
+        source_alias: str = 'source',
+        target_alias: str = 'target',
 ) -> F.col:
     """
     Generates an update set for a Delta Lake MERGE operation where the source data provides partial updates.
 
     Partial updates in this case are when some columns in the data are NULL, but are meant to be non-destructive, or is there no semantic meaning to the NULLs.
 
-    In other words, sometimes we want to keep the original value and not overwrite it with a NULL.
-
-    This is particularly helpful with CDC data.
-
     :param delta_frame: A Delta Lake table or DataFrame that describes a source dataframe
     :param source_alias: A temporary name given to the source data of the MERGE
     :param target_alias: A temporary name given to the target Delta Table of the MERGE
     :return: A dictionary that describes non-destructive updates for all fields in `delta_frame`
+
+    ---
+
+    **Example**
+
+    Given a Delta Lake table:
+
+    .. code-block:: text
+
+        +---+----------+------+
+        | id|  location|status|
+        +---+----------+------+
+        |  1|california|  null|
+        +---+----------+------+
+
+    And some source data that will partially update the Delta Lake table:
+
+    .. code-block:: text
+
+        +---+--------+------+
+        | id|location|status|
+        +---+--------+------+
+        |  1|    null|active|
+        +---+--------+------+
+
+    Perform the following `MERGE`:
+
+    .. code-block:: python
+
+        import hydro.delta as hd
+        delta_table.alias("target").merge(
+            df.alias("source"), "source.id = target.id"
+        ).whenNotMatchedInsertAll().whenMatchedUpdate(set=hd.partial_update_set(df)).execute()
+
+    With the resulting Delta Lake table:
+
+    .. code-block:: text
+
+        +---+----------+------+
+        | id|  location|status|
+        +---+----------+------+
+        |  1|california|active|
+        +---+----------+------+
+
+
     """
     # why does cov lie?
     if isinstance(delta_frame, DeltaTable):  # pragma: no cover
@@ -241,12 +327,17 @@ def partial_update_set(
 def file_stats(delta_table: DeltaTable) -> DataFrame:
     """
 
-    This is a utility function that gives detailed information about the files of a Delta Lake table.
+    Returns detailed information about the files of the current snapshot of a Delta Lake table, including (per-file):
 
-    It returns a DataFrame that gives per-file information including:
-    -
+    - name of file
+    - size of file
+    - partition values
+    - modification time
+    - is data change
+    - statistics (min, max, and null counts)
+    - tags
 
-    It does this via scanning the table's transaction log, so it is fast, cheap, and scalable.
+    This is done by scanning the table's transaction log, so it is fast, cheap, and scalable.
 
     :param delta_table:
     :return: A DataFrame that describes the physical files that compose a given Delta Lake table
@@ -257,17 +348,16 @@ def file_stats(delta_table: DeltaTable) -> DataFrame:
 def partition_stats(delta_table: DeltaTable) -> DataFrame:
     """
 
-    This is a utility function that gives detailed information about the partitions of a Delta Lake table.
+    Returns detailed information about the partitions of the current snapshot of a Delta Lake table including (per-partition):
 
-    It returns a DataFrame that gives per-partition statistics of:
-     - total size in bytes
-     - byte size quantiles (0, .25, .5, .75, 1.0)
-     - total number of records
-     - total number of files
+    - total size in bytes
+    - byte size quantiles (0, .25, .5, .75, 1.0)
+    - total number of records
+    - total number of files
 
-    It does this via scanning the table's transaction log, so it is fast, cheap, and scalable.
+    This is done by scanning the table's transaction log, so it is fast, cheap, and scalable.
 
-    :param delta_table: A Delta Lake table that you would like to analyze
+    :param delta_table:
     :return: A DataFrame that describes the size of all partitions in the table
     """
     allfiles = _snapshot_allfiles(delta_table)
@@ -281,18 +371,14 @@ def partition_stats(delta_table: DeltaTable) -> DataFrame:
     )
 
 
-def get_table_zordering(delta_table: DeltaTable) -> DataFrame:
+def zordering_stats(delta_table: DeltaTable) -> DataFrame:
     """
 
-    A Delta Lake table can be clustered (Z-Ordered) by different, multiple columns.
-
-    It is good to know what a table is clustered by to improve query performance.
-
-    This function analyzes the Delta Lake table and returns a DataFrame that describes the Z-Ordering that has been applied to the table.
+    Returns a DataFrame that describes the Z-Ordering that has been applied to the table.
 
     The resulting DataFrame has schema of `zOrderBy`, `count`.
 
-    :param delta_table: A Delta Lake table that you would like to analyze
+    :param delta_table:
     :return: A DataFrame with schema `zOrderBy`, `count`.
     """
     return (
@@ -305,38 +391,35 @@ def get_table_zordering(delta_table: DeltaTable) -> DataFrame:
     )
 
 
-def detail(delta_table: DeltaTable) -> dict[Any, Any]:
+def detail(delta_table: DeltaTable) -> dict[str, Any]:
     """
 
-    Delta Lake tables give details like name, number of files, size, etc.
+    Returns details about a Delta Lake table including:
 
-    These stats are good, but ultimately they are built for machines, not humans, especially when they scale.
+    - table created timestamp
+    - description
+    - table format
+    - table id
+    - table last modified
+    - location
+    - minimum reader version
+    - minimum writer version
+    - table name
+    - total number of records of current snapshot
+    - total number of files of current snapshot
+    - partition columns
+    - total number of partitions of the current snapshot
+    - properties
+    - total data size of the current snapshot
+    - percentage collected stats of the current snapshot
+    - snapshot version
 
-    I mean who wants to translate `413241234191 bytes` to `384.9 GiB`? Not me. Not you.
-
-    This function returns a human-friendly version of DeltaTable.describe().
-
-    :param delta_table: A Delta Lake table that you would like to analyze
-    :return: A dictionary representing details of a Delta Lake table
+    :param delta_table:
+    :return: A dictionary representing enhanced details of a Delta Lake table
     """
     detail_output = _DetailOutput(delta_table)
     detail_output.humanize()
-    return detail_output.to_dict()
-
-
-def detail_enhanced(delta_table: DeltaTable) -> dict[Any, Any]:
-    """
-
-    See docs for `detail`. This function is similar, but adds more stats to the output including:
-    - number of records in the current snapshot
-    - percentage of files with collected statistics in the current snapshot
-    - number of partitions in the current snapshot
-    - current version
-
-    :param delta_table: A Delta Lake table that you would like to analyze
-    :return: A dictionary representing enhanced details of a Delta Lake table
-    """
-    details = detail(delta_table)
+    details = detail_output.to_dict()
     allfiles = _snapshot_allfiles(delta_table)
     partition_columns = [f'partitionValues.{col}' for col in details['partition_columns']]
 

@@ -6,7 +6,6 @@ from collections import Counter
 from collections import defaultdict
 from copy import copy
 from typing import Callable
-from typing import Optional
 from uuid import uuid4
 
 import pyspark.sql.functions as F
@@ -14,7 +13,6 @@ from pyspark.sql import Column
 from pyspark.sql import DataFrame
 from pyspark.sql import Window
 from pyspark.sql.types import DataType
-from pyspark.sql.types import StructField
 from pyspark.sql.types import StructType
 
 
