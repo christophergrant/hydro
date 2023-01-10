@@ -322,6 +322,7 @@ def hash_schema(df: DataFrame, denylist_fields: list[str] = None) -> Column:
 
     The schema of tables can change, and sometimes it is helpful to be able to determine if a table's schema has changed.
 
+
     """
 
     all_fields = fields(df)
@@ -366,12 +367,71 @@ def _map_fields(df: DataFrame, fields_to_map: list[str], function: Callable) -> 
 def map_fields(df: DataFrame, field_list: list[str], function: Callable) -> DataFrame:
     """
 
-    Apply a function `function` over fields that are specified in a list.
+    Applies a function `function` over fields that are specified in a list.
 
     :param df:
-    :param field_list:
+    :param field_list: A list of fields the function is to be applied to.
     :param function: Any `pyspark.sql.function` or lambda function that takes a column.
     :return:
+
+    Example
+    -----
+
+    .. code-block:: python
+
+        data = [{"empty": "   ", "ibm": "   🥴  ", "other": "thing"}]
+        df = spark.createDataFrame(data)
+        df.show()
+
+    .. code-block:: python
+
+        +-----+-------+-----+
+        |empty|    ibm|other|
+        +-----+-------+-----+
+        |     |   🥴  |thing|
+        +-----+-------+-----+
+
+    .. code-block:: python
+
+        hs.map_fields(df, ["empty", "ibm"], F.trim)
+
+    .. code-block:: python
+
+        +-----+---+-----+
+        |empty|ibm|other|
+        +-----+---+-----+
+        |     | 🥴|thing|
+        +-----+---+-----+
+
+    A lambda function can be used to compose functions:
+
+    .. code-block:: python
+
+
+        hs.map_fields(df, ["empty", "ibm"], lambda x: F.when(F.trim(x) == F.lit(""), None).otherwise(F.trim(x)))
+
+    .. code-block:: python
+
+        +-----+---+-----+
+        |empty|ibm|other|
+        +-----+---+-----+
+        | null| 🥴|thing|
+        +-----+---+-----+
+
+    F.expr() can be used via interpolation with f-strings (it's a little hard to read and write, though):
+
+    .. code-block:: python
+
+        hs.map_fields(df, ["empty", "ibm"], lambda x: F.expr(f"nullif(trim({x}), '')"))
+
+    .. code-block:: python
+
+        +-----+---+-----+
+        |empty|ibm|other|
+        +-----+---+-----+
+        | null| 🥴|thing|
+        +-----+---+-----+
+
     """
     return _map_fields(df, field_list, function)
 
@@ -379,12 +439,20 @@ def map_fields(df: DataFrame, field_list: list[str], function: Callable) -> Data
 def map_fields_by_regex(df: DataFrame, regex: str, function: Callable) -> DataFrame:
     """
 
-    Apply a function `function` over fields that match a regular expression.
+    Applies a function `function` over fields that match a regular expression.
+
 
     :param df:
     :param regex: Regular expression pattern. Uses Python's `re` module.
     :param function: Any `pyspark.sql.function` or lambda function that takes a column.
     :return: Resulting DataFrame
+
+
+    See Also
+    -----
+
+    map_fields
+
     """
 
     matches = _get_fields_by_regex(df, regex)
@@ -394,12 +462,18 @@ def map_fields_by_regex(df: DataFrame, regex: str, function: Callable) -> DataFr
 def map_fields_by_type(df: DataFrame, target_type: DataType, function: Callable) -> DataFrame:
     """
 
-    Apply a function `function` over fields that have a target type.
+    Applies a function `function` over fields that have a target type.
 
     :param df:
     :param target_type:
     :param function: Any `pyspark.sql.function` or lambda function that takes a column.
     :return: Resulting DataFrame
+
+    See Also
+    -----
+
+    map_fields
+
     """
     pertinent_fields = _get_fields_by_type(df, target_type)
     return _map_fields(df, pertinent_fields, function)
@@ -408,7 +482,7 @@ def map_fields_by_type(df: DataFrame, target_type: DataType, function: Callable)
 def select_fields_by_type(df: DataFrame, target_type: DataType):
     """
 
-    Select fields according to a provided regular expression pattern. Works with nested fields (but un-nests them)
+    Selects fields according to a provided regular expression pattern. Works with nested fields (but un-nests them)
 
 
     :param df:
@@ -445,7 +519,7 @@ def select_fields_by_type(df: DataFrame, target_type: DataType):
 def select_fields_by_regex(df: DataFrame, regex: str) -> DataFrame:
     """
 
-    Select fields according to a provided regular expression pattern. Works with nested fields (but un-nests them)
+    Selects fields according to a provided regular expression pattern. Works with nested fields (but un-nests them)
 
     :param df:
     :param regex: Regular expression pattern. Uses Python's `re` module.
