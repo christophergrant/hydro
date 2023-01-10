@@ -415,10 +415,10 @@ def partition_stats(delta_table: DeltaTable) -> DataFrame:
     Returns detailed information about the partitions of the current snapshot of a Delta Lake table including (per-partition):
 
     - total size in bytes
-    - byte size quantiles (0, .25, .5, .75, 1.0)
+    - file byte size quantiles (0, .25, .5, .75, 1.0) - where 0 is min and 1.0 is max
     - total number of records
     - total number of files
-    - max and min timestamps
+    - max and min modification timestamps
 
     This is done by scanning the table's transaction log, so it is fast, cheap, and scalable.
 
@@ -426,14 +426,15 @@ def partition_stats(delta_table: DeltaTable) -> DataFrame:
     """
     allfiles = _snapshot_allfiles(delta_table)
     detail = _DetailOutput(delta_table)
+    # the snapshot encodes partition values in the top-level `partitionValues` column
     partition_columns = [f'partitionValues.{col}' for col in detail.partition_columns]
     return allfiles.groupBy(*partition_columns).agg(
         F.sum('size').alias('total_bytes'),
         F.percentile_approx('size', [0, 0.25, 0.5, 0.75, 1.0]).alias('bytes_quantiles'),
         F.sum(F.get_json_object('stats', '$.numRecords')).alias('num_records'),
         F.count('*').alias('num_files'),
-        F.max('modificationTime').alias('min_modified_timestamp'),
-        F.max('modificationTime').alias('max_modified_timestamp'),
+        F.min('modificationTime').alias('oldest_timestamp'),
+        F.max('modificationTime').alias('newest_timestamp'),
     )
 
 
