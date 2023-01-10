@@ -11,7 +11,7 @@ See [Key Functionality](#key-functionality-) for concrete use cases.
 
 hydro is intended to be used by developers and engineers who interact with Delta Lake tables and Spark DataFrames with Python. It can be used by those of all skill levels.
 
-hydro works on the Databricks platform as well as on other platforms where PySpark and Delta Lake can be installed: local laptops for example.
+hydro works on the Databricks platform as well as on other platforms where PySpark and Delta Lake can be installed: laptops for example.
 
 
 ## Warning ⚠️
