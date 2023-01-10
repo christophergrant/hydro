@@ -17,19 +17,19 @@ from tests import spark
 
 def test_trie():
     fields = ['a.b.1', 'a.b.2']
-    trie = hs._spark._field_trie(fields)
+    trie = hs._field_trie(fields)
     assert trie == {'a.b': ['1', '2']}
 
 
 def test_trie_single():
     fields = ['a.b.1']
-    trie = hs._spark._field_trie(fields)
+    trie = hs._field_trie(fields)
     assert trie == {'a.b': ['1']}
 
 
 def test_trie_toplevel():
     fields = ['a']
-    trie = hs._spark._field_trie(fields)
+    trie = hs._field_trie(fields)
     print(type(trie.items()))
     assert trie == {'a': [None]}
 
@@ -237,17 +237,17 @@ def test_select_by_type():
 
 def test__drop_fields_toplevel_negative():
     with pytest.raises(ValueError) as exception:
-        hs._spark._drop_fields(('a1', [None]))
+        hs._drop_fields(('a1', [None]))
     assert exception.value.args[0] == 'Cannot drop top-level field `a1` with this function. Use df.drop() instead.'
 
 
 def test__drop_fields_2():
-    top_name, col = hs._spark._drop_fields(('a1', ['b']))
+    top_name, col = hs._drop_fields(('a1', ['b']))
     assert top_name == 'a1' and str(col) == "Column<'update_fields(a1)'>"
 
 
 def test__drop_fields_3():
-    top_name, col = hs._spark._drop_fields(('a1.b1', ['a']))
+    top_name, col = hs._drop_fields(('a1.b1', ['a']))
     assert top_name == 'a1' and str(col) == "Column<'update_fields(a1, WithField(update_fields(a1.b1)))'>"
 
 
@@ -331,17 +331,17 @@ def test_csv_inference():
 
 def test_deconstructed_field_toplevel():
     field = 'a1'
-    result = hs._spark._DeconstructedField(field).__dict__
+    result = hs._DeconstructedField(field).__dict__
     assert result == {'levels': ['a1'], 'trunk': 'a1', 'branches': [], 'leaf': None, 'trunk_and_branches': 'a1'}
 
 
 def test_deconstructed_field_l2():
     field = 'a1.b'
-    result = hs._spark._DeconstructedField(field).__dict__
+    result = hs._DeconstructedField(field).__dict__
     assert result == {'levels': ['a1', 'b'], 'trunk': 'a1', 'branches': [], 'leaf': 'b', 'trunk_and_branches': 'a1'}
 
 
 def test_deconstructed_field_l3():
     field = 'a1.b1.c'
-    result = hs._spark._DeconstructedField(field).__dict__
+    result = hs._DeconstructedField(field).__dict__
     assert result == {'levels': ['a1', 'b1', 'c'], 'trunk': 'a1', 'branches': ['b1'], 'leaf': 'c', 'trunk_and_branches': 'a1.b1'}

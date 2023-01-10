@@ -20,7 +20,7 @@ def test_snapshot_allfiles_basic(tmpdir):
         spark,
         path,
     )  # didn't catch when i didn't pass spark as first param
-    assert hd._delta._snapshot_allfiles(delta_table).count() == 1
+    assert hd._snapshot_allfiles(delta_table).count() == 1
 
 
 def test_get_table_zordering_onecol(tmpdir):

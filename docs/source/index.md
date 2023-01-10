@@ -28,7 +28,7 @@ A Python-based toolkit for making data engineering with Delta Lake easier, more 
 [Delta Lake Documentation](https://docs.delta.io/latest/index.html)
 : For understanding more about the Delta Lake project
 
-[Delta Lake Python API Documentation](https://docs.delta.io/latest/api/python/index.html)
+[Delta Lake Python API](https://docs.delta.io/latest/api/python/index.html)
 : Delta Lake's Python API documentation
 
 
@@ -40,7 +40,7 @@ A Python-based toolkit for making data engineering with Delta Lake easier, more 
 
 Delta Lake is supported by the open community, [Delta Lake](https://delta.io/community/).
 
-Apache Spark is supported by its open community, [Apache Spark](https://spark.apache.org/community.html)
+And Apache Spark is also supported by its open community, [Apache Spark](https://spark.apache.org/community.html)
 
 ```{toctree}
 :hidden:
