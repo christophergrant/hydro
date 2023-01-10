@@ -7,6 +7,13 @@ hydro is a collection of Python-based [Apache Spark](https://spark.apache.org/) 
 
 See [Key Functionality](#key-functionality-) for concrete use cases.
 
+## Who are hydro's intended users?
+
+hydro is intended to be used by developers and engineers who interact with Delta Lake tables and Spark DataFrames with Python. It can be used by those of all skill levels.
+
+hydro works on the Databricks platform as well as on other platforms where PySpark and Delta Lake can be installed: local laptops for example.
+
+
 ## Warning ⚠️
 
 hydro is well tested but not battle hardened, yet. Use it at your own risk.
@@ -49,6 +56,6 @@ We are proud prompt engineers, so we display the prompt that gave us the code in
 
 The topic of  SQL vs  DataFrames is a hot one in the data space.
 
-SQL certainly has its place in analytic and other ad-hoc use cases, but it is missing the expressive power of an imperative language.
+SQL certainly has its place in analytic and other ad-hoc use cases, but it is missing the expressive power of an [imperative](https://en.wikipedia.org/wiki/Imperative_programming) language.
 
-This project is a testament to the power of the mix of imperative and declarative expression that DataFrames give. A lot of this code would be very verbose or impossible to express with SQL.
+This project is a testament to the power of the mix of imperative and [declarative](https://en.wikipedia.org/wiki/Declarative_programming) expression that DataFrames give. A lot of this code would be very verbose or impossible to express with SQL.
