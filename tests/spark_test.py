@@ -259,6 +259,14 @@ def test_drop_field_nonest():
     assert _df_to_list_of_dict(final) == [{}]
 
 
+def test_drop_field_nonest_str():
+    data = [{'a1': {'b1': {'a': [1, 2, 3], 'k': 'v'}}}]
+    rdd = spark.sparkContext.parallelize(data)
+    df = spark.read.json(rdd)
+    final = hs.drop_fields(df, 'a1')
+    assert _df_to_list_of_dict(final) == [{}]
+
+
 def test_drop_field_nest1():
     data = [{'a1': {'a': [1, 2, 3], 'k': 'v'}}]
     rdd = spark.sparkContext.parallelize(data)

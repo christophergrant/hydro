@@ -456,7 +456,7 @@ def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
 
     :param df:
     :param fields_to_drop: A list of field names that are to be dropped
-    :return:
+    :return: A new DataFrame without the specified fields
 
     Example
     -----
@@ -493,6 +493,8 @@ def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
          |    |-- society: string (nullable = true)
 
     """
+    if isinstance(fields_to_drop, str):
+        fields_to_drop = [fields_to_drop]
     tries = _field_trie(fields_to_drop)
     for trie in tries.items():
         if trie[1] == [None]:
