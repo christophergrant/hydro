@@ -8,6 +8,7 @@ import pytest
 from delta import DeltaTable
 from pyspark.sql import functions as F
 
+import hydro._delta
 import hydro.delta as hd
 from tests import _df_to_list_of_dict
 from tests import spark
@@ -20,7 +21,7 @@ def test_snapshot_allfiles_basic(tmpdir):
         spark,
         path,
     )  # didn't catch when i didn't pass spark as first param
-    assert hd._snapshot_allfiles(delta_table).count() == 1
+    assert hydro._delta._snapshot_allfiles(delta_table).count() == 1
 
 
 def test_get_table_zordering_onecol(tmpdir):
