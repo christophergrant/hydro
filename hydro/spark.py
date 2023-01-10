@@ -80,12 +80,23 @@ def _fields(
 def fields(df: DataFrame) -> list[str]:
     """
 
-    Returns names of all of the fields of a DataFrame, including nested ones.
-
-    This contrasts with `StructType.fieldNames` as it gives fully qualified names for nested fields.
+    Returns a list of names of all fields of a DataFrame, including nested ones.
 
     :param df: DataFrame that you want to extract all fields from
     :return: A list of column names, all strings
+
+    Example
+    -----
+
+    .. code-block:: python
+
+        import hydro.spark as hs
+        df = spark.range(1)
+        hs.fields(df)
+
+    .. code-block:: python
+
+        ['id']
     """
     return _fields(df, False)
 
@@ -93,12 +104,25 @@ def fields(df: DataFrame) -> list[str]:
 def fields_with_types(df: DataFrame) -> list[tuple[str, DataType]]:
     """
 
-    See docs for `fields`.
-
-    Like `fields`, but returns DataType along with field names as a tuple.
+    Returns a list of tuples of names and types of all fields of a DataFrame, including nested ones.
 
     :param df: DataFrame that you want to extract all fields and types from
     :return: A list of tuples of (column_name, type)
+
+    Example
+    -----
+
+    .. code-block:: python
+
+        import hydro.spark as hs
+        df = spark.range(1)
+        hs.fields_with_types(df)
+
+    .. code-block:: python
+
+        [('id', LongType())]
+
+
     """
     return _fields(df, True)
 
@@ -112,9 +136,46 @@ def deduplicate_dataframe(
     Removes duplicates from a Spark DataFrame.
 
     :param df: The target Delta Lake table that contains duplicates.
-    :param keys: A list of column names used to distinguish rows. The order of this list does not matter.
-    :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements "weighing" more than lesser ones. The columns will be evaluated in descending order. In the event of a tie, you will get non-deterministic results.
+    :param keys: A list of column names used to distinguish rows. The order of this list does not matter. If not provided, will operate the same as `Dataframe.drop_duplicates()`
+    :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements "weighing" more than lesser ones. The columns will be evaluated in descending order. If not provided, will will operate the same as `Dataframe.drop_duplicates(keys)`
     :return: The deduplicated DataFrame
+
+    Example
+    -----
+
+    Given an input DataFrame
+
+    .. code-block:: python
+
+        +---+-----+-----------------------+
+        |id |type |ts                     |
+        +---+-----+-----------------------+
+        |1  |watch|2023-01-09 15:48:00.000|
+        |1  |watch|2023-01-09 15:48:00.001|
+        +---+-----+-----------------------+
+
+    There are two events with the same primary key `id`, but with a slightly different timestamp. Two rows should not share a primary key. A common way of dealing with this is to break the "tie" based on some orderable column(s).
+
+    This can be done with the following code:
+
+
+    .. code-block:: python
+
+        import hydro.spark as hs
+        data  = [{"id": 1, "type": "watch", "ts": "2023-01-09 15:48:00.001"}, {"id": 1, "type": "watch", "ts": "2023-01-09 15:48:00.001"}]
+        df = spark.createDataFrame(data)
+        hs.deduplicate_dataframe(df, ["id"], ["ts"])
+
+    Results in
+
+    .. code-block:: python
+
+        +---+-----------------------+-----+
+        |id |ts                     |type |
+        +---+-----------------------+-----+
+        |1  |2023-01-09 15:48:00.001|watch|
+        +---+-----------------------+-----+
+
     """
     if keys is None:
         keys = []
@@ -166,6 +227,47 @@ def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str
             * ``hash`` :class:`pyspark.sql.functions.hash`
     :param num_bits: Only for sha2. The desired bit length of the result.
     :return: A column that represents the hash.
+
+    Example
+    -----
+
+    Given an input DataFrame
+
+    .. code-block:: python
+
+        +---+---+-----+
+        | id| ts| type|
+        +---+---+-----+
+        |  1|  1|watch|
+        |  1|  1|watch|
+        |  1|  2|watch|
+        +---+---+-----+
+
+    Row hashes are very helpful and convenient when trying to compare rows, especially rows with a lot of columns.
+
+    .. code-block:: python
+
+        import hydro.spark as hs
+        data  = [{"id": 1, "type": "watch", "ts": "1"}, {"id": 1, "type": "watch", "ts": "1"}, {"id": 1, "type": "watch", "ts": "2"}]
+        df = spark.createDataFrame(data)
+        df.withColumn("row_hash", hs.hash_fields(df))
+
+    Results in
+
+    .. code-block:: python
+
+        +---+-----+---+-------------------+
+        | id| type| ts|           row_hash|
+        +---+-----+---+-------------------+
+        |  1|watch|  1|8553228534919528539|
+        |  1|watch|  1|8553228534919528539|
+        |  1|watch|  2|8916583907181700702|
+        +---+-----+---+-------------------+
+
+    The rows with identical content have identical hash values. Different rows have different hash values.
+
+    This is especially helpful with MERGE in something like Delta Lake or Iceberg where updates should only occur on data that has changed.
+
     """
     supported_algorithms = ['sha1', 'sha2', 'md5', 'hash', 'xxhash64']
 
@@ -200,6 +302,26 @@ def hash_schema(df: DataFrame, denylist_fields: list[str] = None) -> Column:
     :param df: Input dataframe whose schema is to be hashed.
     :param denylist_fields: Fields that will not be hashed.
     :return: A column that represents the hash.
+
+    Example
+    -----
+
+    .. code-block:: python
+
+        import hydro.spark as hs
+        df = spark.range(1)
+        df.withColumn("schema_hash", hs.hash_schema(df))
+
+    .. code-block:: python
+
+        +---+--------------------------------+
+        |id |schema_hash                     |
+        +---+--------------------------------+
+        |0  |b80bb7740288fda1f201890375a60c8f|
+        +---+--------------------------------+
+
+    The schema of tables can change, and sometimes it is helpful to be able to determine if a table's schema has changed.
+
     """
 
     all_fields = fields(df)
