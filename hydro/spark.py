@@ -364,6 +364,19 @@ def _map_fields(df: DataFrame, fields_to_map: list[str], function: Callable) -> 
     return df
 
 
+def map_fields(df: DataFrame, field_list: list[str], function: Callable) -> DataFrame:
+    """
+
+    Apply a function `function` over fields that are specified in a list.
+
+    :param df:
+    :param field_list:
+    :param function: Any `pyspark.sql.function` or lambda function that takes a column.
+    :return:
+    """
+    return _map_fields(df, field_list, function)
+
+
 def map_fields_by_regex(df: DataFrame, regex: str, function: Callable) -> DataFrame:
     """
 
@@ -391,19 +404,6 @@ def map_fields_by_type(df: DataFrame, target_type: DataType, function: Callable)
     """
     pertinent_fields = _get_fields_by_type(df, target_type)
     return _map_fields(df, pertinent_fields, function)
-
-
-def map_fields(df: DataFrame, field_list: list[str], function: Callable) -> DataFrame:
-    """
-
-    Apply a function `function` over fields that are specified in a list.
-
-    :param df:
-    :param field_list:
-    :param function: Any `pyspark.sql.function` or lambda function that takes a column.
-    :return:
-    """
-    return _map_fields(df, field_list, function)
 
 
 def select_fields_by_type(df: DataFrame, target_type: DataType):
@@ -457,9 +457,42 @@ def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
     :param df:
     :param fields_to_drop: A list of field names that are to be dropped
     :return:
-    """
-    # potential optimization, use a trie and resolve trie leafs together, as dropFields takes multiple field args
 
+    Example
+    -----
+
+    .. code-block:: python
+
+        # This is a silly way of creating a nested DataFrame, it's here for brevity
+        row = Row(nest=Row(key="val", society="spectacle"))
+        df = spark.createDataFrame([row])
+        df.printSchema()
+
+    And here is the schema:
+
+    .. code-block:: python
+
+        root
+         |-- nest: struct (nullable = true)
+         |    |-- key: string (nullable = true)
+         |    |-- society: string (nullable = true)
+
+    Using hydro, we can drop nested fields - this is not easy in vanilla Spark.
+
+    .. code-block:: python
+
+        import hydro.spark as hs
+        hs.drop_fields(df, ["nest.key"])
+
+    With the resulting schema:
+
+    .. code-block:: python
+
+        root
+         |-- nest: struct (nullable = true)
+         |    |-- society: string (nullable = true)
+
+    """
     tries = _field_trie(fields_to_drop)
     for trie in tries.items():
         if trie[1] == [None]:
@@ -479,6 +512,60 @@ def infer_json_field(df: DataFrame, target_field: str, options: dict[str, str] =
     :param target_field: A field that contains CSV strings that are to be inferred.
     :param options: Standard csv reader options, including `header`. See :class:pyspark.sql.DataFrameReader.json
     :return: The inferred StructType
+
+    Example
+    -----
+
+    .. code-block:: python
+
+         data = [{"id": 1, "payload": '{"salt": "white"}'}, {"id": 2, "payload": '{"pepper": "black"}'}]
+         df = spark.createDataFrame(data)
+         df.show()
+
+    Looks like:
+
+    .. code-block:: python
+
+        +---+-------------------+
+        | id|            payload|
+        +---+-------------------+
+        |  1|  {"salt": "white"}|
+        |  2|{"pepper": "black"}|
+        +---+-------------------+
+
+    But there's a problem, our schema doesn't include salt and pepper.
+
+    .. code-block:: python
+
+        root
+         |-- id: long (nullable = true)
+         |-- payload: string (nullable = true)
+
+    We can use hydro to fix this:
+
+    .. code-block:: python
+
+        import hydro.spark as hs
+        schema = hs.infer_json_field(df, "payload")
+
+    And use the resulting schema to parse the fields:
+
+    .. code-block:: python
+
+        df.withColumn("payload", F.from_json("payload", schema))
+
+    With the new schema:
+
+    .. code-block:: python
+
+        root
+         |-- id: long (nullable = true)
+         |-- payload: struct (nullable = true)
+         |    |-- pepper: string (nullable = true)
+         |    |-- salt: string (nullable = true)
+
+    Notice how there are separate fields for salt and pepper. And now these are addressable leaf nodes.
+
     """
     if not options:  # pragma: no cover
         options = dict()
@@ -496,6 +583,43 @@ def infer_csv_field(df: DataFrame, target_field: str, options: dict[str, str] = 
     :param target_field: A field that contains CSV strings that are to be inferred.
     :param options: Standard csv reader options, including `header`. See :class:pyspark.sql.DataFrameReader.csv
     :return: The inferred StructType
+
+    Example
+    -----
+
+    .. code-block:: python
+
+        data = {
+            'id': 1, 'payload': '''type,date
+            watch,2023-01-09
+            watch,2023-01-10
+        ''',
+        }
+        df = spark.createDataFrame([data])
+        df.show()
+
+
+    .. code-block:: python
+
+        +---+-----------------------------------------------+
+        |id |payload                                        |
+        +---+-----------------------------------------------+
+        |1  |type,date\\nwatch,2023-01-09\\nwatch,2023-01-10\\n|
+        +---+-----------------------------------------------+
+
+
+    .. code-block:: python
+
+        import hydro.spark as hs
+        csv_options = {'header': 'True'}
+        schema = hs.infer_csv_field(df, 'payload', options=csv_options)
+        schema.simpleString()
+
+    .. code-block:: python
+
+        'struct<type:string,date:string>'
+
+
     """
     if not options:  # pragma: no cover
         options = dict()
