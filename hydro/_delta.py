@@ -4,20 +4,39 @@ import copy
 
 from delta import DeltaTable
 from pyspark.sql import DataFrame
+from pyspark.sql import SparkSession
 
 from hydro import _humanize_bytes
 from hydro import _humanize_number
+
+
+def _is_running_on_dbr(spark: SparkSession) -> bool:
+    flag = True
+    try:
+        # a canary class, randomly chosen
+        spark._jvm.com.DatabricksMain.NONFATAL()
+    except TypeError:
+        flag = False
+    return flag
 
 
 def _snapshot_allfiles(delta_table: DeltaTable) -> DataFrame:
     spark = delta_table.toDF().sparkSession
     location = delta_table.detail().collect()[0]['location']
 
-    # py4j nonsense to call the DeltaLog API
-    delta_log = spark._jvm.org.apache.spark.sql.delta.DeltaLog.forTable(
-        spark._jsparkSession,
-        location,
-    )
+    is_databricks = _is_running_on_dbr(spark)
+
+    if is_databricks:  # pragma: no cover
+        delta_log = spark._jvm.org.apache.spark.sql.delta.DeltaLog.forTable(
+            spark._jsparkSession,
+            location,
+        )
+    else:
+        delta_log = spark._jvm.org.apache.spark.sql.delta.DeltaLog.forTable(
+            spark._jsparkSession,
+            location,
+        )
+
     return DataFrame(delta_log.snapshot().allFiles(), spark)
 
 

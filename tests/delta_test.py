@@ -60,7 +60,6 @@ def test_detail(tmpdir):
 
     delta_table = DeltaTable.forPath(spark, path)
     enhanced_details = hd.detail(delta_table)
-    pprint(enhanced_details)
     assert enhanced_details['numRecords'] == '10,000.0'
 
 

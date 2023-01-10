@@ -31,7 +31,6 @@ def test_trie_single():
 def test_trie_toplevel():
     fields = ['a']
     trie = hydro._spark._field_trie(fields)
-    print(type(trie.items()))
     assert trie == {'a': [None]}
 
 
@@ -238,17 +237,17 @@ def test_select_by_type():
 
 def test__drop_fields_toplevel_negative():
     with pytest.raises(ValueError) as exception:
-        hydro._spark._drop_fields(('a1', [None]))
+        hydro._spark._create_drop_field_column(('a1', [None]))
     assert exception.value.args[0] == 'Cannot drop top-level field `a1` with this function. Use df.drop() instead.'
 
 
 def test__drop_fields_2():
-    top_name, col = hydro._spark._drop_fields(('a1', ['b']))
+    top_name, col = hydro._spark._create_drop_field_column(('a1', ['b']))
     assert top_name == 'a1' and str(col) == "Column<'update_fields(a1)'>"
 
 
 def test__drop_fields_3():
-    top_name, col = hydro._spark._drop_fields(('a1.b1', ['a']))
+    top_name, col = hydro._spark._create_drop_field_column(('a1.b1', ['a']))
     assert top_name == 'a1' and str(col) == "Column<'update_fields(a1, WithField(update_fields(a1.b1)))'>"
 
 
@@ -307,8 +306,7 @@ def test_drop_field_array_of_struct_negative():  # pragma: no cover
     df = spark.read.json(rdd)
     with pytest.raises(AnalysisException) as exception:
         hs.drop_fields(df, ['a1.a'])
-    # assert exception.value.args[0] ==
-    print("pyspark.sql.utils.AnalysisException: cannot resolve 'update_fields(a1)' due to data type mismatch: struct argument should be struct type, got: array<struct<a:array<bigint>,k:string>>")
+    assert exception.value.args[0] == "pyspark.sql.utils.AnalysisException: cannot resolve 'update_fields(a1)' due to data type mismatch: struct argument should be struct type, got: array<struct<a:array<bigint>,k:string>>"
 
 
 def test_json_inference():

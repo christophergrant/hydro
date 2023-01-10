@@ -39,7 +39,7 @@ def scd(
     Example
     -----
 
-     For **SCD Type 2**,
+     For **`SCD Type 2 <https://en.wikipedia.org/wiki/Slowly_changing_dimension#Type_2:_add_new_row>`**,
 
      Given a Delta Lake table:
 
@@ -209,7 +209,7 @@ def bootstrap_scd2(
             path="/path/to/delta/table",
         )
 
-    Results in:
+    Results in the below data being persisted to the given path, in this case, `/path/to/delta/table`
 
     .. code-block:: python
 

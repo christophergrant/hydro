@@ -12,7 +12,7 @@ from pyspark.sql import Window
 from pyspark.sql.types import DataType
 from pyspark.sql.types import StructType
 
-from hydro._spark import _drop_fields
+from hydro._spark import _create_drop_field_column
 from hydro._spark import _field_trie
 from hydro._spark import _fields
 from hydro._spark import _get_fields_by_regex
@@ -500,7 +500,7 @@ def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
          |    |-- key: string (nullable = true)
          |    |-- society: string (nullable = true)
 
-    Using hydro, we can drop nested fields - this is not easy in vanilla Spark.
+    Using hydro, we can simply drop nested fields.
 
     .. code-block:: python
 
@@ -523,7 +523,7 @@ def drop_fields(df: DataFrame, fields_to_drop: list[str]) -> DataFrame:
         if trie[1] == [None]:
             df = df.drop(trie[0])
         else:
-            name, col = _drop_fields(trie)
+            name, col = _create_drop_field_column(trie)
             df = df.withColumn(name, col)
     return df
 

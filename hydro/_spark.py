@@ -94,7 +94,7 @@ def _map_fields(df: DataFrame, fields_to_map: list[str], function: Callable) -> 
     return df
 
 
-def _drop_fields(fields_to_drop: tuple[str, list[str | None]]) -> tuple[str, Column]:
+def _create_drop_field_column(fields_to_drop: tuple[str, list[str | None]]) -> tuple[str, Column]:
 
     address, leaves = fields_to_drop
 
