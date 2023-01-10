@@ -418,7 +418,7 @@ def partition_stats(delta_table: DeltaTable) -> DataFrame:
     - file byte size quantiles (0, .25, .5, .75, 1.0) - where 0 is min and 1.0 is max
     - total number of records
     - total number of files
-    - max and min modification timestamps
+    - oldest and newest timestamps
 
     This is done by scanning the table's transaction log, so it is fast, cheap, and scalable.
 

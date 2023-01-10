@@ -87,8 +87,8 @@ def test_partition_stats(tmpdir):
 
     presented = _df_to_list_of_dict(hd.partition_stats(delta_table))
     # drop these cuz it's gonna be different every time we test
-    del presented[0]['min_modified_timestamp']
-    del presented[0]['max_modified_timestamp']
+    del presented[0]['oldest_timestamp']
+    del presented[0]['newest_timestamp']
     expected = [{'part': '0', 'total_bytes': 478, 'bytes_quantiles': [478, 478, 478, 478, 478], 'num_records': 1.0, 'num_files': 1}]
     assert presented == expected
 
