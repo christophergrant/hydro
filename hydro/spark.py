@@ -264,9 +264,9 @@ def hash_fields(df: DataFrame, denylist_fields: list[str] = None, algorithm: str
         |  1|watch|  2|8916583907181700702|
         +---+-----+---+-------------------+
 
-    The rows with identical content have identical hash values. Different rows have different hash values.
+    The rows with identical content have identical hash values. Rows with different content have different hash values.
 
-    This is especially helpful with MERGE in something like Delta Lake or Iceberg where updates should only occur on data that has changed.
+    This is very helpful when comparing rows. Instead of typing col1 = col1 AND col2 = col2 ..., hash = hash can be used. This saves developer time and keystrokes.
 
     """
     supported_algorithms = ['sha1', 'sha2', 'md5', 'hash', 'xxhash64']
@@ -353,7 +353,6 @@ def _get_fields_by_regex(df: DataFrame, regex: str) -> list[str]:
 
 def _get_fields_by_type(df: DataFrame, target_type: DataType) -> list[str]:
     all_fields = fields_with_types(df)
-    print(all_fields)
     pertinent_fields = [field[0] for field in all_fields if field[1] == target_type]
     return pertinent_fields
 
@@ -409,9 +408,35 @@ def map_fields_by_type(df: DataFrame, target_type: DataType, function: Callable)
 def select_fields_by_type(df: DataFrame, target_type: DataType):
     """
 
+    Select fields according to a provided regular expression pattern. Works with nested fields (but un-nests them)
+
+
     :param df:
-    :param target_type:
-    :return:
+    :param target_type: A DataType type that is to be selected.
+    :return: A new DataFrame with the selected fields
+
+    Example
+    -----
+
+    .. code-block:: python
+
+        data = [{"string1": "one", "int": 1, "string2": "two"}]
+        df = spark.createDataFrame(data)
+
+    .. code-block:: python
+
+        import hydro.spark as hs
+        import pyspark.sql.types as T
+        hs.select_fields_by_type(df, T.StringType())
+
+    .. code-block:: python
+
+        +-------+-------+
+        |string1|string2|
+        +-------+-------+
+        |    one|    two|
+        +-------+-------+
+
     """
     pertinent_fields = _get_fields_by_type(df, target_type)
     return df.select(*pertinent_fields)
@@ -420,9 +445,32 @@ def select_fields_by_type(df: DataFrame, target_type: DataType):
 def select_fields_by_regex(df: DataFrame, regex: str) -> DataFrame:
     """
 
+    Select fields according to a provided regular expression pattern. Works with nested fields (but un-nests them)
+
     :param df:
-    :param regex:
-    :return:
+    :param regex: Regular expression pattern. Uses Python's `re` module.
+    :return: A new DataFrame with the selected fields
+
+
+    .. code-block:: python
+
+        data = [{"string1": "one", "int": 1, "string2": "two"}]
+        df = spark.createDataFrame(data)
+
+    .. code-block:: python
+
+        import hydro.spark as hs
+        import pyspark.sql.types as T
+        hs.select_fields_by_regex(df, "string.*")
+
+    .. code-block:: python
+
+        +-------+-------+
+        |string1|string2|
+        +-------+-------+
+        |    one|    two|
+        +-------+-------+
+
     """
     matches = _get_fields_by_regex(df, regex)
     return df.select(*matches)
