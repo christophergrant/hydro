@@ -418,6 +418,7 @@ def partition_stats(delta_table: DeltaTable) -> DataFrame:
     - byte size quantiles (0, .25, .5, .75, 1.0)
     - total number of records
     - total number of files
+    - max and min timestamps
 
     This is done by scanning the table's transaction log, so it is fast, cheap, and scalable.
 
@@ -431,6 +432,8 @@ def partition_stats(delta_table: DeltaTable) -> DataFrame:
         F.percentile_approx('size', [0, 0.25, 0.5, 0.75, 1.0]).alias('bytes_quantiles'),
         F.sum(F.get_json_object('stats', '$.numRecords')).alias('num_records'),
         F.count('*').alias('num_files'),
+        F.max('modificationTime').alias('min_modified_timestamp'),
+        F.max('modificationTime').alias('max_modified_timestamp'),
     )
 
 
