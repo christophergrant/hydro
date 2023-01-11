@@ -20,13 +20,12 @@ jobs:
   #    with:
   #      env: '["py37"]'
   #      os: windows-latest
-  main-linux:
-    cov:
-      uses: codecov/codecov-action@v3
-      with:
-          token: ${{ secrets.CODECOV_TOKEN }}  # not required for public repos
-          files: ./coverage.xml  # optional
-          flags: unittests  # optional
-          name: codecov-umbrella  # optional
-          fail_ci_if_error: true  # optional (default = false)
-          verbose: true  # optional (default = false)
+  cov:
+    uses: codecov/codecov-action@v3
+    with:
+        token: ${{ secrets.CODECOV_TOKEN }}  # not required for public repos
+        files: ./coverage.xml  # optional
+        flags: unittests  # optional
+        name: codecov-umbrella  # optional
+        fail_ci_if_error: true  # optional (default = false)
+        verbose: true  # optional (default = false)
