@@ -20,6 +20,7 @@ jobs:
       - name: Generate coverage report
         run: |
           pip install -r requirements-dev.txt
+          pip install .
           pytest --cov=./ --cov-report=xml
       - uses: codecov/codecov-action@v3
         with:
