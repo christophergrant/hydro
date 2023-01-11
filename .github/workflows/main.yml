@@ -8,6 +8,12 @@ on:
     tags:
   pull_request:
 
+steps:
+  - uses: asottile/workflows/.github/workflows/tox.yml@v1.0.0
+    with:
+        env: '["py37", "py38", "py39"]'
+        os: ubuntu-latest
+
 jobs:
   #  main-windows:
   #    uses: asottile/workflows/.github/workflows/tox.yml@v1.0.0
@@ -15,11 +21,6 @@ jobs:
   #      env: '["py37"]'
   #      os: windows-latest
   main-linux:
-    tox:
-      uses: asottile/workflows/.github/workflows/tox.yml@v1.0.0
-      with:
-        env: '["py37", "py38", "py39"]'
-        os: ubuntu-latest
     cov:
       uses: codecov/codecov-action@v3
       with:
