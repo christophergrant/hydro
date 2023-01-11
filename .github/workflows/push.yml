@@ -1,19 +1,26 @@
----
-name: cov
+name: build
 
-on: [push]
+on:
+  pull_request:
+    types: [opened, synchronize]
+  push:
+    branches: [main]
 
 jobs:
-  run:
+  main-linux:
+   uses: asottile/workflows/.github/workflows/tox.yml@v1.0.0
+   with:
+      env: '["py37", "py38", "py39", "py310"]'
+      os: ubuntu-latest
+  cov:
     runs-on: ubuntu-latest
+    needs: [main-linux]
     steps:
       - uses: actions/checkout@master
       - name: Generate coverage report
         run: |
-          pip install pytest
-          pip install pytest-cov
-          pip install covdefaults
-          pip install delta-spark
+          pip install -r requirements-dev.txt
+          pip install .
           pytest --cov=./ --cov-report=xml
       - uses: codecov/codecov-action@v3
         with:

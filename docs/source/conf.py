@@ -104,8 +104,8 @@ html_theme = 'sphinx_book_theme'
 html_title = ''
 html_theme_options = {
     'home_page_in_toc': True,
-    'github_url': 'https://github.com/christophergrant/delta-hydro',
-    'repository_url': 'https://github.com/christophergrant/delta-hydro',
+    'github_url': 'https://github.com/christophergrant/hydro',
+    'repository_url': 'https://github.com/christophergrant/hydro',
     'repository_branch': 'main',
     'path_to_docs': 'docs/source',
     'use_repository_button': True,
