@@ -289,7 +289,7 @@ def test_deduplicate(tmpdir):
     df = spark.createDataFrame(data)
     df.write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
-    result = hd.deduplicate(delta_table, staging_path, 'id')
+    result = hydro._delta._deduplicate(delta_table, staging_path, 'id')
     expected = [{'id': 1, 'ts': 1}]
     assert sorted(_df_to_list_of_dict(result), key=lambda x: x['id']) == sorted(
         expected,
@@ -307,7 +307,7 @@ def test_deduplicate_tiebreaking(tmpdir):
     df = spark.createDataFrame(data)
     df.write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
-    result = hd.deduplicate(
+    result = hydro._delta._deduplicate(
         delta_table,
         staging_path,
         'id',

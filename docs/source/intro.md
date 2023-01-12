@@ -10,7 +10,7 @@ This page describes how to get started with the hydro, with a focus on installat
 To install use [pip](https://pip.pypa.io):
 
 ```bash
-pip install delta-hydro
+pip install spark-hydro
 ```
 
 To start an interative shell:
@@ -27,5 +27,5 @@ For other methods, follow [this guide](https://docs.delta.io/latest/quick-start.
 
 To install hydro on a Databricks cluster, follow [these directions](https://docs.databricks.com/libraries/cluster-libraries.html#install-a-library-on-a-cluster).
 
-[pypi-badge]: https://img.shields.io/pypi/v/delta-hydro.svg
-[pypi-link]: https://pypi.org/project/delta-hydro/
+[pypi-badge]: https://img.shields.io/pypi/v/spark-hydro.svg
+[pypi-link]: https://pypi.org/project/spark-hydro/

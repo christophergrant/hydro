@@ -64,4 +64,4 @@ api/delta.md
 api/spark.md
 ```
 
-[pypi-link]: https://pypi.org/project/delta-hydro/
+[pypi-link]: https://pypi.org/project/spark-hydro/
