@@ -6,6 +6,7 @@ from delta import DeltaTable
 from pyspark.sql import DataFrame
 from pyspark.sql import SparkSession
 
+import hydro.spark as hs
 from hydro import _humanize_bytes
 from hydro import _humanize_number
 

@@ -271,6 +271,7 @@ def bootstrap_scd2(
         delta_table = DeltaTable.forPath(source_df.sparkSession, path)
     return delta_table
 
+
 def partial_update_set(
         delta_frame: DataFrame | DeltaTable,
         source_alias: str = 'source',
