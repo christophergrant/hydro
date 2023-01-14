@@ -27,7 +27,7 @@ def _snapshot_allfiles(delta_table: DeltaTable) -> DataFrame:
 
     is_databricks = _is_running_on_dbr(spark)
 
-    if is_databricks:  # pragma: no cover
+    if is_databricks:
         delta_log = spark._jvm.org.apache.spark.sql.delta.DeltaLog.forTable(
             spark._jsparkSession,
             location,

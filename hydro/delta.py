@@ -227,7 +227,7 @@ def bootstrap_scd2(
 
     """
 
-    if partition_columns is None:  # pragma: no cover
+    if partition_columns is None:
         partition_columns = []
     if not path and not table_identifier:
         raise ValueError(
@@ -334,7 +334,7 @@ def partial_update_set(
 
     """
     # why does cov lie?
-    if isinstance(delta_frame, DeltaTable):  # pragma: no cover
+    if isinstance(delta_frame, DeltaTable):
         delta_frame = delta_frame.toDF()
     fields = hs.fields(delta_frame)
     return {field: F.coalesce(f'{source_alias}.{field}', f'{target_alias}.{field}') for field in fields}
