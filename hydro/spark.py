@@ -133,7 +133,7 @@ def deduplicate_dataframe(
         return df.drop_duplicates()
 
     if df.isStreaming and tiebreaking_columns:
-        print('df is streaming, ignoring `tiebreaking_columns`')  # pragma: no cover
+        print('df is streaming, ignoring `tiebreaking_columns`')
 
     count_col = uuid4().hex  # generate a random column name that is virtually certain to not be in the dataset
     window = Window.partitionBy(keys)
@@ -592,10 +592,10 @@ def infer_json_field(df: DataFrame, target_field: str, options: dict[str, str] =
     Notice how there are separate fields for salt and pepper. And now these are addressable leaf nodes.
 
     """
-    if not options:  # pragma: no cover
+    if not options:
         options = dict()
     spark = df.sparkSession
-    rdd = df.select(target_field).rdd.map(lambda row: row[0])  # pragma: no cover
+    rdd = df.select(target_field).rdd.map(lambda row: row[0])
     return spark.read.options(**options).json(rdd).schema
 
 
@@ -646,9 +646,9 @@ def infer_csv_field(df: DataFrame, target_field: str, options: dict[str, str] = 
 
 
     """
-    if not options:  # pragma: no cover
+    if not options:
         options = dict()
     spark = df.sparkSession
-    rdd = df.select(target_field).rdd.map(lambda row: row[0])  # pragma: no cover
+    rdd = df.select(target_field).rdd.map(lambda row: row[0])
     # noinspection PyTypeChecker
     return spark.read.options(**options).csv(rdd).schema

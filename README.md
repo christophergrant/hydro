@@ -2,6 +2,7 @@
 
 [![build](https://github.com/christophergrant/hydro/actions/workflows/push.yml/badge.svg?branch=main)](https://github.com/christophergrant/hydro/actions/workflows/push.yml)
 [![codecov](https://codecov.io/gh/christophergrant/hydro/branch/main/graph/badge.svg?token=Z64814CV1E)](https://codecov.io/gh/christophergrant/hydro)
+![pypidownloads](https://img.shields.io/pypi/dm/spark-hydro?color=%23123d0d&label=pypi%20downloads&style=flat-square)
 
 hydro is a collection of Python-based [Apache Spark](https://spark.apache.org/) and [Delta Lake](https://delta.io/) extensions.
 
