@@ -318,3 +318,12 @@ def test_deduplicate_tiebreaking(tmpdir):
         expected,
         key=lambda x: x['id'],
     )
+
+
+def test_idempotent_multiwriter(tmpdir):
+    path = f'{tmpdir}/{inspect.stack()[0][3]}'
+    df = spark.range(1)
+    df.write.format('delta').option('txnVersion', 1).option('txnAppId', 'app').save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+    output = hd.idempotency_markers(delta_table)
+    assert str(output) == 'Map(app -> 1)'
