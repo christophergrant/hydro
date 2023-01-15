@@ -22,31 +22,14 @@ def _is_running_on_dbr(spark: SparkSession) -> bool:
 
 
 def _snapshot_transactions(delta_table: DeltaTable):
-    spark = delta_table.toDF().sparkSession
-    location = delta_table.detail().collect()[0]['location']
-
-    is_databricks = _is_running_on_dbr(spark)
-
-    if is_databricks:
-        delta_log = spark._jvm.org.apache.spark.sql.delta.DeltaLog.forTable(
-            spark._jsparkSession,
-            location,
-        )
-    else:
-        delta_log = spark._jvm.org.apache.spark.sql.delta.DeltaLog.forTable(
-            spark._jsparkSession,
-            location,
-        )
-
+    delta_log = _delta_log(delta_table)
     return delta_log.snapshot().transactions()
 
 
-def _snapshot_allfiles(delta_table: DeltaTable) -> DataFrame:
+def _delta_log(delta_table: DeltaTable):
     spark = delta_table.toDF().sparkSession
     location = delta_table.detail().collect()[0]['location']
-
     is_databricks = _is_running_on_dbr(spark)
-
     if is_databricks:
         delta_log = spark._jvm.org.apache.spark.sql.delta.DeltaLog.forTable(
             spark._jsparkSession,
@@ -57,8 +40,12 @@ def _snapshot_allfiles(delta_table: DeltaTable) -> DataFrame:
             spark._jsparkSession,
             location,
         )
+    return delta_log
 
-    return DataFrame(delta_log.snapshot().allFiles(), spark)
+
+def _snapshot_allfiles(delta_table: DeltaTable) -> DataFrame:
+    delta_log = _delta_log(delta_table)
+    return DataFrame(delta_log.snapshot().allFiles(), delta_table.toDF().sparkSession)
 
 
 class _DetailOutput:

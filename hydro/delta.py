@@ -14,6 +14,7 @@ from hydro._delta import _DetailOutput
 from hydro._delta import _snapshot_allfiles
 from hydro._delta import _snapshot_transactions
 
+
 def scd(
         delta_table: DeltaTable,
         source: DataFrame,
