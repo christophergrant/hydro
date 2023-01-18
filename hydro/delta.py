@@ -13,6 +13,7 @@ from hydro import _humanize_number
 from hydro._delta import _DetailOutput
 from hydro._delta import _snapshot_allfiles
 from hydro._delta import _summarize_data_files
+from hydro._delta import _snapshot_transactions
 
 
 def scd(
@@ -228,7 +229,7 @@ def bootstrap_scd2(
 
     """
 
-    if partition_columns is None:  # pragma: no cover
+    if partition_columns is None:
         partition_columns = []
     if not path and not table_identifier:
         raise ValueError(
@@ -335,7 +336,7 @@ def partial_update_set(
 
     """
     # why does cov lie?
-    if isinstance(delta_frame, DeltaTable):  # pragma: no cover
+    if isinstance(delta_frame, DeltaTable):
         delta_frame = delta_frame.toDF()
     fields = hs.fields(delta_frame)
     return {field: F.coalesce(f'{source_alias}.{field}', f'{target_alias}.{field}') for field in fields}
@@ -469,6 +470,8 @@ def detail(delta_table: DeltaTable) -> dict[str, Any]:
     details['version'] = _humanize_number(version)
     return details
 
-
 def summarize_all_files(delta_table: DeltaTable):
     return _summarize_data_files(delta_table)
+
+def idempotency_markers(delta_table: DeltaTable):
+    return _snapshot_transactions(delta_table)
