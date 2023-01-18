@@ -329,6 +329,15 @@ def test_summarize_allfiles(tmpdir):
     assert result == expected
 
 
+def test_summarize_allfiles_inhuman(tmpdir):
+    path = f'{tmpdir}/{inspect.stack()[0][3]}'
+    spark.range(1).write.format('delta').save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+    result = hd.summarize_all_files(delta_table, False)
+    expected = {'number_of_files': 1, 'total_size': 478}
+    assert result == expected
+
+
 def test_idempotent_multiwriter(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
     df = spark.range(1)
