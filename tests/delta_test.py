@@ -325,7 +325,7 @@ def test_summarize_allfiles(tmpdir):
     spark.range(1).write.format('delta').save(path)
     delta_table = DeltaTable.forPath(spark, path)
     result = hd.summarize_all_files(delta_table)
-    print(result)
+    assert result == (1, 478)
 
 def test_idempotent_multiwriter(tmpdir):
     path = f'{tmpdir}/{inspect.stack()[0][3]}'
