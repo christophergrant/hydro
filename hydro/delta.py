@@ -9,11 +9,12 @@ from pyspark.sql import functions as F
 from pyspark.sql import Window
 
 import hydro.spark as hs
+from hydro import _humanize_bytes
 from hydro import _humanize_number
 from hydro._delta import _DetailOutput
 from hydro._delta import _snapshot_allfiles
-from hydro._delta import _summarize_data_files
 from hydro._delta import _snapshot_transactions
+from hydro._delta import _summarize_data_files
 
 
 def scd(
@@ -470,8 +471,14 @@ def detail(delta_table: DeltaTable) -> dict[str, Any]:
     details['version'] = _humanize_number(version)
     return details
 
-def summarize_all_files(delta_table: DeltaTable):
-    return _summarize_data_files(delta_table)
+
+def summarize_all_files(delta_table: DeltaTable, humanize: bool = True) -> dict[str, str]:
+    summary = _summarize_data_files(delta_table)
+    if humanize:
+        summary['number_of_files'] = _humanize_number(summary['number_of_files'])
+        summary['total_size'] = _humanize_bytes(summary['total_size'])
+    return summary
+
 
 def idempotency_markers(delta_table: DeltaTable):
     return _snapshot_transactions(delta_table)

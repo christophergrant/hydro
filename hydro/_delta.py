@@ -23,11 +23,11 @@ def _summarize_data_files(delta_table: DeltaTable):
     while files.hasNext():
         file = files.next()
         path = file.getPath()
-        if "_delta_log" in path.toUri().toString():  # this ain't great - figure out globbing instead of doing this.
+        if '_delta_log' in path.toUri().toString():  # this ain't great - figure out globbing instead of doing this.
             continue
         file_count += 1
         total_size += file.getLen()
-    return file_count, total_size
+    return {'number_of_files': file_count, 'total_size': total_size}
 
 
 def _is_running_on_dbr(spark: SparkSession) -> bool:
