@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-from pprint import pprint
 from uuid import uuid4
 
 import pytest

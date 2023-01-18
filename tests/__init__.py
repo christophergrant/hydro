@@ -8,8 +8,6 @@ from delta import DeltaTable
 from pyspark.sql import DataFrame
 from pyspark.sql import SparkSession
 
-from hydro import _humanize_timestamp
-
 
 def _df_to_list_of_dict(df: DataFrame | DeltaTable) -> list[dict[Any, Any]]:
     if isinstance(df, DeltaTable):
@@ -19,23 +17,6 @@ def _df_to_list_of_dict(df: DataFrame | DeltaTable) -> list[dict[Any, Any]]:
             'DataFrame over 10 rows, not materializing. Was this an accident?',
         )
     return [row.asDict(recursive=True) for row in df.collect()]
-
-
-def test_df_to_dict_exception():
-    df = spark.range(11)  # pragma: no cover
-    with pytest.raises(OverflowError) as exception:  # pragma: no cover
-        _df_to_list_of_dict(df)
-    assert (
-        exception.value.args[0] == 'DataFrame over 10 rows, not materializing. Was this an accident?'
-    )  # pragma: no cover
-
-
-def test_humanize_timestamp_ms():
-    print(_humanize_timestamp(1674080199000))
-
-
-def test_humanize_timestamp_s():
-    print(_humanize_timestamp(1674080199))
 
 
 builder = (
