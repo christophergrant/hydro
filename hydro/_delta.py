@@ -11,6 +11,25 @@ from hydro import _humanize_bytes
 from hydro import _humanize_number
 
 
+def _summarize_data_files(delta_table: DeltaTable):
+    base_path = delta_table.detail().collect()[0]['location']
+    spark = delta_table.toDF().sparkSession
+    hadoop_conf = spark._jsparkSession.sessionState().newHadoopConf()
+    glob_path = spark._jvm.org.apache.hadoop.fs.Path(base_path)
+    driver_fs = glob_path.getFileSystem(hadoop_conf)
+    files = driver_fs.listFiles(glob_path, True)
+    file_count = 0
+    total_size = 0
+    while files.hasNext():
+        file = files.next()
+        path = file.getPath()
+        if "_delta_log" in path.toUri().toString(): # this ain't great - figure out globbing instead of doing this.
+            continue
+        file_count += 1
+        total_size += file.getLen()
+    return file_count, total_size
+
+
 def _is_running_on_dbr(spark: SparkSession) -> bool:
     flag = True
     try:

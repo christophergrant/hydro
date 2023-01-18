@@ -12,6 +12,7 @@ import hydro.spark as hs
 from hydro import _humanize_number
 from hydro._delta import _DetailOutput
 from hydro._delta import _snapshot_allfiles
+from hydro._delta import _summarize_data_files
 
 
 def scd(
@@ -467,3 +468,7 @@ def detail(delta_table: DeltaTable) -> dict[str, Any]:
     version = delta_table.history().select('version').limit(1).collect()[0].asDict()['version']
     details['version'] = _humanize_number(version)
     return details
+
+
+def summarize_all_files(delta_table: DeltaTable):
+    return _summarize_data_files(delta_table)

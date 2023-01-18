@@ -318,3 +318,11 @@ def test_deduplicate_tiebreaking(tmpdir):
         expected,
         key=lambda x: x['id'],
     )
+
+
+def test_summarize_allfiles(tmpdir):
+    path = f'{tmpdir}/{inspect.stack()[0][3]}'
+    spark.range(1).write.format('delta').save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+    result = hd.summarize_all_files(delta_table)
+    print(result)
