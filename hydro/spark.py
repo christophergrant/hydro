@@ -534,8 +534,8 @@ def infer_json_field(df: DataFrame, target_field: str, options: dict[str, str] =
     Parses a JSON string and infers its schema.
 
     :param df:
-    :param target_field: A field that contains CSV strings that are to be inferred.
-    :param options: Standard csv reader options, including `header`. See :class:pyspark.sql.DataFrameReader.json
+    :param target_field: A field that contains JSON strings that are to be inferred.
+    :param options: Standard JSON reader options, including `header`. See :class:pyspark.sql.DataFrameReader.json
     :return: The inferred StructType
 
     Example
@@ -606,7 +606,7 @@ def infer_csv_field(df: DataFrame, target_field: str, options: dict[str, str] = 
 
     :param df:
     :param target_field: A field that contains CSV strings that are to be inferred.
-    :param options: Standard csv reader options, including `header`. See :class:pyspark.sql.DataFrameReader.csv
+    :param options: Standard CSV reader options, including `header`. See :class:pyspark.sql.DataFrameReader.csv
     :return: The inferred StructType
 
     Example
