@@ -11,6 +11,7 @@ from pyspark.sql import Window
 import hydro.spark as hs
 from hydro import _humanize_bytes
 from hydro import _humanize_number
+from hydro import _humanize_timestamp
 from hydro._delta import _DetailOutput
 from hydro._delta import _snapshot_allfiles
 from hydro._delta import _snapshot_transactions
@@ -477,6 +478,7 @@ def summarize_all_files(delta_table: DeltaTable, humanize: bool = True) -> dict[
     if humanize:
         summary['number_of_files'] = _humanize_number(summary['number_of_files'])
         summary['total_size'] = _humanize_bytes(summary['total_size'])
+        summary['oldest_timestamp'] = _humanize_timestamp(summary['oldest_timestamp'])
     return summary
 
 

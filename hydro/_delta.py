@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import math
 
 from delta import DeltaTable
 from pyspark.sql import DataFrame
@@ -20,6 +21,7 @@ def _summarize_data_files(delta_table: DeltaTable):
     files = driver_fs.listFiles(glob_path, True)
     file_count = 0
     total_size = 0
+    min_ts = math.inf
     while files.hasNext():
         file = files.next()
         path = file.getPath()
@@ -27,7 +29,8 @@ def _summarize_data_files(delta_table: DeltaTable):
             continue
         file_count += 1
         total_size += file.getLen()
-    return {'number_of_files': file_count, 'total_size': total_size}
+        min_ts = min(min_ts, file.getModificationTime())
+    return {'number_of_files': file_count, 'total_size': total_size, 'oldest_timestamp': min_ts}
 
 
 def _is_running_on_dbr(spark: SparkSession) -> bool:
