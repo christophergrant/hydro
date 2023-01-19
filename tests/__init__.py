@@ -13,19 +13,10 @@ def _df_to_list_of_dict(df: DataFrame | DeltaTable) -> list[dict[Any, Any]]:
     if isinstance(df, DeltaTable):
         df = df.toDF()
     if df.count() > 10:
-        raise OverflowError(  # pragma: no cover
+        raise OverflowError(
             'DataFrame over 10 rows, not materializing. Was this an accident?',
         )
     return [row.asDict(recursive=True) for row in df.collect()]
-
-
-def test_df_to_dict_exception():
-    df = spark.range(11)  # pragma: no cover
-    with pytest.raises(OverflowError) as exception:  # pragma: no cover
-        _df_to_list_of_dict(df)
-    assert (
-        exception.value.args[0] == 'DataFrame over 10 rows, not materializing. Was this an accident?'
-    )  # pragma: no cover
 
 
 builder = (

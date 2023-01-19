@@ -9,10 +9,13 @@ from pyspark.sql import functions as F
 from pyspark.sql import Window
 
 import hydro.spark as hs
+from hydro import _humanize_bytes
 from hydro import _humanize_number
+from hydro import _humanize_timestamp
 from hydro._delta import _DetailOutput
 from hydro._delta import _snapshot_allfiles
 from hydro._delta import _snapshot_transactions
+from hydro._delta import _summarize_data_files
 
 
 def scd(
@@ -470,5 +473,40 @@ def detail(delta_table: DeltaTable) -> dict[str, Any]:
     return details
 
 
-def idempotency_markers(delta_table: DeltaTable):
+def summarize_all_files(delta_table: DeltaTable, humanize: bool = True) -> dict[str, str]:
+    """
+
+    Lists and summarizes all of the contents of a Delta Lake table's data directory.
+
+    The directory will contain:
+
+    - data files that are part of the current snapshot
+    - data files that are "tombstoned" and not part of the current snapshot
+
+    Returns summary statistics including:
+
+    - the total number of files
+    - the total size of the files
+    - the oldest timestamp of the files
+
+    :param: humanize: Whether or not the results should be made more easily read by humans. Turn this to False if you're looking to do calculations on the raw metrics.
+    :returns: A dictionary containing summary statistics about all of the data files under the Delta Lake table's location
+    """
+    summary = _summarize_data_files(delta_table)
+    if humanize:
+        summary['number_of_files'] = _humanize_number(summary['number_of_files'])
+        summary['total_size'] = _humanize_bytes(summary['total_size'])
+        summary['oldest_timestamp'] = _humanize_timestamp(summary['oldest_timestamp'])
+    return summary
+
+
+def idempotency_markers(delta_table: DeltaTable) -> str:
+    """
+
+    Exposes a Delta Lake table's idempotency markers, i.e txnAppId and txnVersion.
+
+    Currently this returns a string representation of a Scala map.
+
+    :returns: A string that represents a Scala map of the idempotency markers. This map is in the form Map(key-> value) where key is a given txnAppId and value is the associated version.
+    """
     return _snapshot_transactions(delta_table)

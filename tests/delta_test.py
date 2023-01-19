@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-from pprint import pprint
 from uuid import uuid4
 
 import pytest
@@ -318,6 +317,27 @@ def test_deduplicate_tiebreaking(tmpdir):
         expected,
         key=lambda x: x['id'],
     )
+
+
+def test_summarize_allfiles(tmpdir):
+    path = f'{tmpdir}/{inspect.stack()[0][3]}'
+    spark.range(1).write.format('delta').save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+    result = hd.summarize_all_files(delta_table)
+    del result['oldest_timestamp']
+    expected = {'number_of_files': '1', 'total_size': '478.00 bytes'}
+    assert result == expected
+
+
+def test_summarize_allfiles_inhuman(tmpdir):
+    path = f'{tmpdir}/{inspect.stack()[0][3]}'
+    spark.range(1).write.format('delta').save(path)
+    delta_table = DeltaTable.forPath(spark, path)
+    result = hd.summarize_all_files(delta_table, False)
+    print(result)
+    del result['oldest_timestamp']
+    expected = {'number_of_files': 1, 'total_size': 478}
+    assert result == expected
 
 
 def test_idempotent_multiwriter(tmpdir):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import math
 
 from delta import DeltaTable
 from pyspark.sql import DataFrame
@@ -9,6 +10,27 @@ from pyspark.sql import SparkSession
 import hydro.spark as hs
 from hydro import _humanize_bytes
 from hydro import _humanize_number
+
+
+def _summarize_data_files(delta_table: DeltaTable):
+    base_path = delta_table.detail().collect()[0]['location']
+    spark = delta_table.toDF().sparkSession
+    hadoop_conf = spark._jsparkSession.sessionState().newHadoopConf()
+    glob_path = spark._jvm.org.apache.hadoop.fs.Path(base_path)
+    driver_fs = glob_path.getFileSystem(hadoop_conf)
+    files = driver_fs.listFiles(glob_path, True)
+    file_count = 0
+    total_size = 0
+    min_ts = math.inf
+    while files.hasNext():
+        file = files.next()
+        path = file.getPath()
+        if '_delta_log' in path.toUri().toString():  # this ain't great - figure out globbing instead of doing this.
+            continue
+        file_count += 1
+        total_size += file.getLen()
+        min_ts = min(min_ts, file.getModificationTime())
+    return {'number_of_files': file_count, 'total_size': total_size, 'oldest_timestamp': min_ts}
 
 
 def _is_running_on_dbr(spark: SparkSession) -> bool:
@@ -94,7 +116,7 @@ def _deduplicate(
     :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements "weighing" more than lesser ones. The columns will be evaluated in descending order. In the event of a tie, you will get non-deterministic results.
     :return: The same Delta Lake table as **delta_table**.
     """
-    if isinstance(keys, str):  # pragma: no cover
+    if isinstance(keys, str):
         keys = [keys]
     detail_object = _DetailOutput(delta_table)
     target_location = detail_object.location
