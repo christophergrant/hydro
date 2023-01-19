@@ -298,21 +298,18 @@ def test_drop_field_nest4():
     final = hs.drop_fields(df, ['a1.b1.c1.d1.a'])
     assert _df_to_list_of_dict(final) == [{'a1': {'b1': {'c1': {'d1': {'k': 'v'}}}}}]
 
-
-@pytest.mark.skip(reason='no way of currently testing this')
-def test_drop_field_array_of_struct_negative():
-    data = [{'a1': [{'k': 'v', 'a': [1, 2, 3]}]}]
-    rdd = spark.sparkContext.parallelize(data)
-    df = spark.read.json(rdd)
-    with pytest.raises(AnalysisException) as exception:
-        hs.drop_fields(df, ['a1.a'])
-    assert exception.value.args[0] == "pyspark.sql.utils.AnalysisException: cannot resolve 'update_fields(a1)' due to data type mismatch: struct argument should be struct type, got: array<struct<a:array<bigint>,k:string>>"
-
-
 def test_json_inference():
     data = {'id': 1, 'payload': """{"name": "christopher", "age": 420}"""}
     df = spark.createDataFrame([data])
     schema = hs.infer_json_field(df, 'payload')
+    assert str(schema.json()) == """{"fields":[{"metadata":{},"name":"age","nullable":true,"type":"long"},{"metadata":{},"name":"name","nullable":true,"type":"string"}],"type":"struct"}"""
+
+
+def test_json_inference_with_options():
+    data = {'id': 1, 'payload': """{"name": "christopher", "age": 420}"""}
+    df = spark.createDataFrame([data])
+    options = {"mode": "FAILFAST"}
+    schema = hs.infer_json_field(df, 'payload', options=options)
     assert str(schema.json()) == """{"fields":[{"metadata":{},"name":"age","nullable":true,"type":"long"},{"metadata":{},"name":"name","nullable":true,"type":"string"}],"type":"struct"}"""
 
 
