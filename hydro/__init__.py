@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-__version__ = '0.1.1'
+__version__ = '0.2.1'
 
 # transformed numFiles to string, sizeInBytes -> size with type string
 from datetime import datetime
