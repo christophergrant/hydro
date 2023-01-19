@@ -474,6 +474,22 @@ def detail(delta_table: DeltaTable) -> dict[str, Any]:
 
 
 def summarize_all_files(delta_table: DeltaTable, humanize: bool = True) -> dict[str, str]:
+    """
+
+    Lists and summarizes all of the contents of a Delta Lake table's data directory.
+
+    The directory will contain
+    - Data files that are part of the current snapshot
+    - Data files that are "tombstoned" and not part of the current snapshot
+
+    Returns summary statistics including
+    - Total number of files
+    - The total size of the files
+    - The oldest timestamp of the files
+
+    :param: humanize: Whether or not the results should be made more easily read by humans. Turn this to False if you're looking to do calculations on the raw metrics.
+    :returns: A dictionary containing summary statistics about all of the data files under the Delta Lake table's location
+    """
     summary = _summarize_data_files(delta_table)
     if humanize:
         summary['number_of_files'] = _humanize_number(summary['number_of_files'])
@@ -482,5 +498,13 @@ def summarize_all_files(delta_table: DeltaTable, humanize: bool = True) -> dict[
     return summary
 
 
-def idempotency_markers(delta_table: DeltaTable):
+def idempotency_markers(delta_table: DeltaTable) -> str:
+    """
+
+    Exposes a Delta Lake table's idempotency markers, i.e txnAppId and txnVersion.
+
+    Currently this returns a string representation of a Scala map.
+
+    :returns: A string that represents a Scala map of the idempotency markers. This map is in the form Map(key-> value) where key is a given txnAppId and value is the associated version.
+    """
     return _snapshot_transactions(delta_table)
