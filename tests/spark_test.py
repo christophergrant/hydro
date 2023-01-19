@@ -300,7 +300,7 @@ def test_drop_field_nest4():
 
 
 @pytest.mark.skip(reason='no way of currently testing this')
-def test_drop_field_array_of_struct_negative():  # pragma: no cover
+def test_drop_field_array_of_struct_negative():
     data = [{'a1': [{'k': 'v', 'a': [1, 2, 3]}]}]
     rdd = spark.sparkContext.parallelize(data)
     df = spark.read.json(rdd)

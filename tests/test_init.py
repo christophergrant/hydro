@@ -8,12 +8,12 @@ from tests import spark
 
 
 def test_df_to_dict_exception():
-    df = spark.range(11)  # pragma: no cover
-    with pytest.raises(OverflowError) as exception:  # pragma: no cover
+    df = spark.range(11)
+    with pytest.raises(OverflowError) as exception:
         _df_to_list_of_dict(df)
     assert (
         exception.value.args[0] == 'DataFrame over 10 rows, not materializing. Was this an accident?'
-    )  # pragma: no cover
+    )
 
 
 def test_humanize_timestamp_ms():

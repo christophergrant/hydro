@@ -13,7 +13,7 @@ def _df_to_list_of_dict(df: DataFrame | DeltaTable) -> list[dict[Any, Any]]:
     if isinstance(df, DeltaTable):
         df = df.toDF()
     if df.count() > 10:
-        raise OverflowError(  # pragma: no cover
+        raise OverflowError(
             'DataFrame over 10 rows, not materializing. Was this an accident?',
         )
     return [row.asDict(recursive=True) for row in df.collect()]

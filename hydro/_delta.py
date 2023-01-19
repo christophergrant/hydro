@@ -116,7 +116,7 @@ def _deduplicate(
     :param tiebreaking_columns: A list of column names used for ordering. The order of this list matters, with earlier elements "weighing" more than lesser ones. The columns will be evaluated in descending order. In the event of a tie, you will get non-deterministic results.
     :return: The same Delta Lake table as **delta_table**.
     """
-    if isinstance(keys, str):  # pragma: no cover
+    if isinstance(keys, str):
         keys = [keys]
     detail_object = _DetailOutput(delta_table)
     target_location = detail_object.location
