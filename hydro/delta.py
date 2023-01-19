@@ -478,14 +478,16 @@ def summarize_all_files(delta_table: DeltaTable, humanize: bool = True) -> dict[
 
     Lists and summarizes all of the contents of a Delta Lake table's data directory.
 
-    The directory will contain
-    - Data files that are part of the current snapshot
-    - Data files that are "tombstoned" and not part of the current snapshot
+    The directory will contain:
 
-    Returns summary statistics including
-    - Total number of files
-    - The total size of the files
-    - The oldest timestamp of the files
+    - data files that are part of the current snapshot
+    - data files that are "tombstoned" and not part of the current snapshot
+
+    Returns summary statistics including:
+
+    - the total number of files
+    - the total size of the files
+    - the oldest timestamp of the files
 
     :param: humanize: Whether or not the results should be made more easily read by humans. Turn this to False if you're looking to do calculations on the raw metrics.
     :returns: A dictionary containing summary statistics about all of the data files under the Delta Lake table's location
