@@ -1,6 +1,15 @@
 ```{eval-rst}
 .. scd.md:
 ```
-# Slowly Changing Dimensions
+# Tracking entities over time (SCD2)
 
-asdfjkl;
+## Background
+
+There are many Slowly Changing Dimensions patterns, but Type 2 seems to have the most popularity.
+
+
+
+## SCD2 and Spark
+### Batch
+### Streaming
+

@@ -347,3 +347,19 @@ def test_idempotent_multiwriter(tmpdir):
     delta_table = DeltaTable.forPath(spark, path)
     output = hd.idempotency_markers(delta_table)
     assert str(output) == 'Map(app -> 1)'
+
+
+def test_late_arriving_scd2_negative(tmpdir):
+    path = f'{tmpdir}/{inspect.stack()[0][3]}'
+    data = [{"id": 1, "event_date": "2023-01-02"},
+            {"id": 1, "event_date": "2023-01-03"},
+            ]
+    df = spark.createDataFrame(data)
+    delta_table = hd.bootstrap_scd2(df, path=path, keys=["id"], effective_ts="event_date", end_ts="end_date")
+    new_data = [{"id": 1, "event_date": "2023-01-01"}]
+    new_df = spark.createDataFrame(new_data)
+    hd.scd(delta_table, new_df, keys=["id"], effective_ts="event_date", end_ts="end_date")
+    result = delta_table.toDF()
+    result_dict = _df_to_list_of_dict(result)
+    expected = [{'event_date': '2023-01-01', 'id': 1, 'end_date': '2023-01-03'}, {'event_date': '2023-01-02', 'id': 1, 'end_date': '2023-01-03'}, {'event_date': '2023-01-03', 'id': 1, 'end_date': None}]
+    assert result_dict == expected
