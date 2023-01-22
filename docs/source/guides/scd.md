@@ -12,4 +12,3 @@ There are many Slowly Changing Dimensions patterns, but Type 2 seems to have the
 ## SCD2 and Spark
 ### Batch
 ### Streaming
-

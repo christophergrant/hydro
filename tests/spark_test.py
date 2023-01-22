@@ -298,6 +298,7 @@ def test_drop_field_nest4():
     final = hs.drop_fields(df, ['a1.b1.c1.d1.a'])
     assert _df_to_list_of_dict(final) == [{'a1': {'b1': {'c1': {'d1': {'k': 'v'}}}}}]
 
+
 def test_json_inference():
     data = {'id': 1, 'payload': """{"name": "christopher", "age": 420}"""}
     df = spark.createDataFrame([data])
@@ -308,7 +309,7 @@ def test_json_inference():
 def test_json_inference_with_options():
     data = {'id': 1, 'payload': """{"name": "christopher", "age": 420}"""}
     df = spark.createDataFrame([data])
-    options = {"mode": "FAILFAST"}
+    options = {'mode': 'FAILFAST'}
     schema = hs.infer_json_field(df, 'payload', options=options)
     assert str(schema.json()) == """{"fields":[{"metadata":{},"name":"age","nullable":true,"type":"long"},{"metadata":{},"name":"name","nullable":true,"type":"string"}],"type":"struct"}"""
 
