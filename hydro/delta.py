@@ -22,8 +22,8 @@ def scd(
         delta_table: DeltaTable,
         source: DataFrame,
         keys: list[str] | str,
-        effective_ts: str,
-        end_ts: str = None,
+        effective_field: str,
+        end_field: str = None,
         scd_type: int = 2,
 ) -> DeltaTable:
     """
@@ -35,8 +35,8 @@ def scd(
     :param delta_table: The target Delta Lake table that is to be updated. See `hydro.delta.bootstrap_scd2` if you need to create an SCD2 table.
     :param source: The source data that will be used to merge with `delta_table`
     :param keys: Column name(s) that identify unique rows. Can be a single column name as a string, or a list of strings, where order of the list does not matter.
-    :param effective_ts: The name of the existing column that will be used as the “start” or “effective” indicator for a given entity. The column be of any orderable type, including timestamp, date, string, and numeric types.
-    :param end_ts: Only required for type 2. The name of the non-existing column that will be used as the “end” indicator for a given entity. Its type will match the type of effective_ts.
+    :param effective_field: The name of the existing column that will be used as the “start” or “effective” indicator for a given entity. The column be of any orderable type, including timestamp, date, string, and numeric types.
+    :param end_field: Only required for type 2. The name of the non-existing column that will be used as the “end” indicator for a given entity. Its type will match the type of effective_field.
     :param scd_type: The type of SCD that is to be performed
     :return: The same `delta_table`
 
@@ -72,7 +72,7 @@ def scd(
     .. code-block:: python
 
         import hydro.delta as hd
-        hd.scd(delta_table, df, ["id"], effective_ts="date", end_ts="end_date")
+        hd.scd(delta_table, df, ["id"], effective_field="date", end_field="end_date")
 
     Results in:
 
@@ -101,22 +101,22 @@ def scd(
             delta_table: DeltaTable,
             source: DataFrame,
             keys: list[str] | str,
-            effective_ts: str,
-            end_ts: str,
+            effective_field: str,
+            end_field: str,
     ):
-        if not end_ts:
+        if not end_field:
             raise ValueError(
-                '`end_ts` parameter not provided, type 2 scd requires this',
+                '`end_field` parameter not provided, type 2 scd requires this',
             )
 
-        updated_rows = delta_table.toDF().join(source, keys, 'left_semi').filter(F.col(end_ts).isNull())
+        updated_rows = delta_table.toDF().join(source, keys, 'left_semi').filter(F.col(end_field).isNull())
         combined_rows = updated_rows.unionByName(source, allowMissingColumns=True)
-        window = Window.partitionBy(keys).orderBy(effective_ts)
+        window = Window.partitionBy(keys).orderBy(effective_field)
         final_payload = combined_rows.withColumn(
-            end_ts,
-            F.lead(effective_ts).over(window),
+            end_field,
+            F.lead(effective_field).over(window),
         )
-        merge_keys = keys + [effective_ts]
+        merge_keys = keys + [effective_field]
         merge_key_condition = ' AND '.join(
             [f'source.{key} = target.{key}' for key in merge_keys],
         )
@@ -130,9 +130,9 @@ def scd(
             delta_table: DeltaTable,
             source: DataFrame,
             keys: list[str] | str,
-            effective_ts: str,
+            effective_field: str,
     ):
-        window = Window.partitionBy(keys).orderBy(F.col(effective_ts).desc())
+        window = Window.partitionBy(keys).orderBy(F.col(effective_field).desc())
         row_number_uuid = uuid4().hex  # avoid column collisions by using uuid
         final_payload = (
             source.withColumn(
@@ -152,9 +152,9 @@ def scd(
         return delta_table
 
     if scd_type == 2:
-        return _scd2(delta_table, source, keys, effective_ts, end_ts)
+        return _scd2(delta_table, source, keys, effective_field, end_field)
     elif scd_type == 1:
-        return _scd1(delta_table, source, keys, effective_ts)
+        return _scd1(delta_table, source, keys, effective_field)
     else:
         raise ValueError('`scd_type` not of (1,2)')
 
@@ -162,8 +162,8 @@ def scd(
 def bootstrap_scd2(
         source_df: DataFrame,
         keys: list[str] | str,
-        effective_ts: str,
-        end_ts: str,
+        effective_field: str,
+        end_field: str,
         table_properties: dict[str, str] = None,
         partition_columns: list[str] = None,
         comment: str = None,
@@ -176,8 +176,8 @@ def bootstrap_scd2(
 
     :param source_df: Source data that will populate the final Delta Lake table
     :param keys: Column name(s) that identify unique rows. Can be a single column name as a string, or a list of strings, where order of the list does not matter.
-    :param effective_ts: The name of the existing column that will be used as the "start" or "effective" timestamp for a given entity. The column be of any orderable type, including timestamp, date, string, and numeric types.
-    :param end_ts: The name of the non-existing column that will be used as the "end" timestamp for a given entity. Its type will match the type of `effective_ts`.
+    :param effective_field: The name of the existing column that will be used as the "start" or "effective" timestamp for a given entity. The column be of any orderable type, including timestamp, date, string, and numeric types.
+    :param end_field: The name of the non-existing column that will be used as the "end" timestamp for a given entity. Its type will match the type of `effective_field`.
     :param table_properties: A set of [Delta Lake table properties](https://docs.delta.io/latest/table-properties.html) or custom properties.
     :param partition_columns: A set of column names that will be used to partition the resulting Delta Lake table.
     :param comment: Comment that describes the table.
@@ -208,8 +208,8 @@ def bootstrap_scd2(
         delta_table = hd.bootstrap_scd2(
             df,
             keys=["id"],
-            effective_ts="date",
-            end_ts="end_date",
+            effective_field="date",
+            end_field="end_date",
             path="/path/to/delta/table",
         )
 
@@ -239,10 +239,10 @@ def bootstrap_scd2(
         )
 
     # scd2-ify the existing data
-    window = Window.partitionBy(keys).orderBy(effective_ts)
+    window = Window.partitionBy(keys).orderBy(effective_field)
     final_payload = source_df.withColumn(
-        end_ts,
-        F.lead(effective_ts).over(window),
+        end_field,
+        F.lead(effective_field).over(window),
     )
 
     # build the DeltaTable object
