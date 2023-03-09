@@ -37,7 +37,7 @@ def _is_running_on_dbr(spark: SparkSession) -> bool:
     flag = True
     try:
         # a canary class, randomly chosen
-        spark._jvm.com.DatabricksMain.NONFATAL()
+        spark._jvm.com.databricks.DatabricksMain.NONFATAL()
     except TypeError:
         flag = False
     return flag
