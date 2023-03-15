@@ -53,7 +53,7 @@ def _delta_log(delta_table: DeltaTable):
     location = delta_table.detail().collect()[0]['location']
     is_databricks = _is_running_on_dbr(spark)
     if is_databricks:
-        delta_log = spark._jvm.org.apache.spark.sql.delta.DeltaLog.forTable(
+        delta_log = spark._jvm.com.databricks.sql.transaction.tahoe.DeltaLog.forTable(
             spark._jsparkSession,
             location,
         )
