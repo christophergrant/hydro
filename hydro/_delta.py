@@ -48,7 +48,7 @@ def _snapshot_transactions(delta_table: DeltaTable):
     return delta_log.snapshot().transactions()
 
 
-def _delta_log(delta_table: DeltaTable):
+def _delta_log(delta_table: DeltaTable): # pragma: no cover
     spark = delta_table.toDF().sparkSession
     location = delta_table.detail().collect()[0]['location']
     is_databricks = _is_running_on_dbr(spark)
